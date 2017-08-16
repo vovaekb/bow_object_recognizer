@@ -114,6 +114,11 @@ std::vector<feature_point> BoWTrainer::getDescriptors()
 // DescriptorMatcher
 DescriptorMatcher::DescriptorMatcher(std::string index_file_path, std::string training_data_file_path) : index_file_path_(index_file_path), training_data_file_path_(training_data_file_path) {}
 
+DescriptorMatcher::~DescriptorMatcher()
+{
+    clear();
+}
+
 void DescriptorMatcher::add(std::vector<feature_point>& descriptors)
 {
     train_descriptors_.insert( train_descriptors_.end(), descriptors.begin(), descriptors.end() );
@@ -277,10 +282,16 @@ void BoWModelDescriptorExtractor::loadMatcherIndex()
     printf("[BoWModelDescriptorExtractor::loadMatcherIndex] vocabulary size: %d\n", descriptor_size);
 }
 
-void BoWModelDescriptorExtractor::clear()
-{
+//void BoWModelDescriptorExtractor::clear()
+//{
+//    descriptor_size_ = 0;
+//    dmatcher_->clear();
+//}
+
+BoWModelDescriptorExtractor::~BoWModelDescriptorExtractor() {
     descriptor_size_ = 0;
-    dmatcher_->clear();
+//    dmatcher_->clear();
+    dmatcher_.reset();
 }
 
 void BoWModelDescriptorExtractor::compute(std::vector<feature_point> model_descriptors, bow_vector &bow_model_descriptor)
