@@ -237,7 +237,9 @@ void trainBowDescriptors(BoWModelDescriptorExtractor::Ptr& bow_extractor, std::v
 
     }
 
-    bow_extractor->clear();
+//    bow_extractor->clear();
+    bow_extractor.reset();
+
 }
 
 int main(int argc, char** argv)

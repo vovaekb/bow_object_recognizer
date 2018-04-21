@@ -76,6 +76,8 @@ public:
     typedef boost::shared_ptr<DescriptorMatcher> Ptr;
 
     DescriptorMatcher(std::string index_file_path, std::string training_data_file_path);
+
+    ~DescriptorMatcher();
     void add(std::vector<feature_point>& descriptors);
     void setSearchIndexParams(std::string search_index_params);
     void clear();
@@ -109,13 +111,15 @@ public:
 
     BoWModelDescriptorExtractor(std::string index_file_path, std::string data_file_path);
 
+    ~BoWModelDescriptorExtractor();
+
     void setVocabulary(std::vector<feature_point> vocabulary );
     void setDescriptorSize(int descriptor_size);
     void setSearchIndexParams(std::string search_index_params);
     std::vector<feature_point> getVocabulary();
     int descriptorSize();
     void loadMatcherIndex();
-    void clear();
+//    void clear();
     void compute(std::vector<feature_point> model_descriptors, bow_vector& bow_model_descriptor);
 
 protected:
