@@ -302,9 +302,9 @@ void BoWModelDescriptorExtractor::compute(std::vector<feature_point> model_descr
     std::vector<DMatch> matches;
     dmatcher_->match(model_descriptors, matches);
 
-    for(size_t i = 0; i < matches.size(); i++)
+    for(auto & match : matches)
     {
-        int train_idx = matches[i].train_idx;
+        int train_idx = match.train_idx;
 
         bow_model_descriptor[train_idx] = bow_model_descriptor[train_idx] + 1.f;
     }

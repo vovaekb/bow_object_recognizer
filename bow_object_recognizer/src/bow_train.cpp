@@ -92,10 +92,8 @@ void trainBowDescriptors(BoWModelDescriptorExtractor::Ptr& bow_extractor, std::v
 
     std::cout << training_models.size() << " training models have been loaded\n";
 
-    for(size_t i = 0; i < training_models.size(); i++)
+    for(auto & training_model : training_models)
     {
-        Model training_model = training_models[i];
-
         std::cout << "\n\nProcessing model " << training_model.model_id << "\n";
 
         string model_path = training_source->getModelDir(training_model);
@@ -160,26 +158,22 @@ void trainBowDescriptors(BoWModelDescriptorExtractor::Ptr& bow_extractor, std::v
 
     cout << "Review words occurrences vector\n";
 
-    for(size_t i = 0; i < word_occurrences.size(); i++)
+    for(auto & word_occurrence : word_occurrences)
     {
-        printf("%d ", (int)word_occurrences[i]);
+        printf("%d ", (int)word_occurrence);
     }
 
     std::cout << "\n";
 
 
-    for(size_t i = 0; i < training_models.size(); i++)
+    for(auto & training_model : training_models)
     {
-        Model training_model = training_models[i];
-
         string model_path = training_source->getModelDir(training_model);
 
         if(use_partial_views)
         {
-            for(size_t j = 0; j < training_model.views.size(); j++)
+            for(auto & view_id : training_model.views)
             {
-                string view_id = training_model.views[j];
-
                 std::stringstream bow_sample_key;
                 bow_sample_key << training_model.model_id << "_" << view_id;
 
