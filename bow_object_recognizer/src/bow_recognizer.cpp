@@ -8,6 +8,7 @@
 #include <vector>
 #include <algorithm>
 #include <math.h>
+#include <utility>
 #include <numeric>
 #include <pcl/console/parse.h>
 #include <pcl/console/print.h>
@@ -224,7 +225,7 @@ void recognizeScene(PointInTPtr& scene_cloud)
 
         feature_estimator->setSupportRadius(descr_rad);
 
-        feature_estimator->calculateFeatures(scene_cloud, scene_keypoints, normals, descriptors_vect);
+        feature_estimator->calculateFeatures(scene_cloud, scene_keypoints, normals, &descriptors_vect);
 
         // Save feature cloud to PCD and load it for using in SACAlignment
         feature_estimator->saveFeatures(descriptors_vect, scene_descr_file_path);
@@ -417,7 +418,7 @@ void recognizeScene(PointInTPtr& scene_cloud)
                     string keypoints_cloud_path = path_ss.str();
                     candidate_feature_cloud.loadInputCloud(keypoints_cloud_path);
 
-                    candidate_feature_clouds.push_back(candidate_feature_cloud);
+                    candidate_feature_clouds.push_back(std::move(candidate_feature_cloud));
 
                     alignment.addTemplateCloud( candidate_feature_cloud );
                 }
@@ -489,7 +490,7 @@ void recognizeScene(PointInTPtr& scene_cloud)
                     string keypoints_cloud_path = path_ss.str();
                     candidate_feature_cloud.loadInputCloud(keypoints_cloud_path);
 
-                    candidate_feature_clouds.push_back(candidate_feature_cloud);
+                    candidate_feature_clouds.push_back(std::move(candidate_feature_cloud));
 
                     alignment.addTemplateCloud( candidate_feature_cloud );
                 }
@@ -561,7 +562,7 @@ void recognizeScene(PointInTPtr& scene_cloud)
                     string keypoints_cloud_path = path_ss.str();
                     candidate_feature_cloud.loadInputCloud(keypoints_cloud_path);
 
-                    candidate_feature_clouds.push_back(candidate_feature_cloud);
+                    candidate_feature_clouds.push_back(std::move(candidate_feature_cloud));
 
                     alignment.addTemplateCloud( candidate_feature_cloud );
                 }
@@ -633,7 +634,7 @@ void recognizeScene(PointInTPtr& scene_cloud)
                     string keypoints_cloud_path = path_ss.str();
                     candidate_feature_cloud.loadInputCloud(keypoints_cloud_path);
 
-                    candidate_feature_clouds.push_back(candidate_feature_cloud);
+                    candidate_feature_clouds.push_back(std::move(candidate_feature_cloud));
 
                     alignment.addTemplateCloud( candidate_feature_cloud );
                 }

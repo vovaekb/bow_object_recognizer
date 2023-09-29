@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <iostream>
 #include <vector>
+#include <utility>
 #include <boost/filesystem.hpp>
 #include <boost/format.hpp>
 #include <boost/algorithm/string.hpp>
@@ -100,7 +101,7 @@ void Source::getModelsInDir(boost::filesystem::path &models_path)
 
           }
 
-          models_.push_back(model);
+          models_.push_back(std::move(model));
       }
     }
 

@@ -2,6 +2,7 @@
 #define FEATURE_ESTIMATOR_H
 
 #include <string>
+#include <utility>
 #include <vector>
 #include <iostream>
 #include <pcl/point_cloud.h>
@@ -32,7 +33,11 @@ public:
 
     FeatureEstimator() {  }
 
-    virtual void calculateFeatures(PointInTPtr& in, PointInTPtr& keypoints, NormalTPtr& normals, std::vector<feature_point>& features) = 0;
+    virtual void calculateFeatures(
+        PointInTPtr& in, 
+        PointInTPtr& keypoints, 
+        NormalTPtr& normals, 
+        std::vector<feature_point>& features) = 0;
 
     virtual void saveFeatures(std::vector<feature_point>& features, std::string path) = 0;
 
@@ -109,7 +114,11 @@ public:
         return resolution;
     }
 
-    void calculateFeatures(PointInTPtr& in, PointInTPtr& keypoints, NormalTPtr& normals, std::vector<feature_point>& features)
+    void calculateFeatures(
+        PointInTPtr& in, 
+        PointInTPtr& keypoints, 
+        NormalTPtr& normals, 
+        std::vector<feature_point>& features)
     {
         std::cout << "Calculate features SHOT ...\n";
 
@@ -134,7 +143,7 @@ public:
         // Preprocess features: remove NaNs
         for(size_t j = 0; j < shots->points.size(); j++)
         {
-            feature_point signature (dimensionality);
+            feature_point descriptor_vector (dimensionality);
 
             if(!pcl_isfinite(shots->at(j).descriptor[0])) {
                 nan_indices_->indices.push_back(j);
@@ -143,10 +152,10 @@ public:
 
             for(int idx = 0; idx < dimensionality; idx++)
             {
-                signature[idx] = shots->points[j].descriptor[idx];
+                descriptor_vector[idx] = shots->points[j].descriptor[idx];
             }
 
-            features.push_back(signature);
+            features.push_back(std::move(descriptor_vector));
         }
 
         PCL_INFO("SHOT descriptors has %d points after NaN removal\n\n", (int)features.size());
@@ -187,17 +196,17 @@ public:
 
         for(size_t j = 0; j < features_cloud->points.size(); j++)
         {
-            feature_point descr_vect (dimensionality);
+            feature_point descriptor_vector (dimensionality);
 
             if(!pcl::isFinite<FeatureT>(features_cloud->points[j]))
                 PCL_WARN("Point %d is NaN\n", (int)j);
 
             for(int idx = 0; idx < dimensionality; idx++)
             {
-                descr_vect[idx] = features_cloud->points[j].descriptor[idx];
+                descriptor_vector[idx] = features_cloud->points[j].descriptor[idx];
             }
 
-            features.push_back(descr_vect);
+            features.emplace(std::move(descriptor_vector));
         }
     }
 
@@ -227,7 +236,11 @@ public:
         nan_indices_ = pcl::PointIndices::Ptr(new pcl::PointIndices);
     }
 
-    void calculateFeatures(PointInTPtr& in, PointInTPtr& keypoints, NormalTPtr& normals, std::vector<feature_point>& features)
+    void calculateFeatures(
+        PointInTPtr& in, 
+        PointInTPtr& keypoints, 
+        NormalTPtr& normals, 
+        std::vector<feature_point>& features)
     {
         std::cout << "Calculate features FPFH ...\n";
 
@@ -259,14 +272,14 @@ public:
 
         for(size_t j = 0; j < fpfhs->points.size(); j++)
         {
-            feature_point signature (dimensionality);
+            feature_point descriptor_vector (dimensionality);
 
             for(int idx = 0; idx < dimensionality; idx++)
             {
-                signature[idx] = fpfhs->points[j].histogram[idx];
+                descriptor_vector[idx] = fpfhs->points[j].histogram[idx];
             }
 
-            features.push_back(signature);
+            features.push_back(std::move(descriptor_vector));
         }
 
     }
@@ -302,17 +315,17 @@ public:
 
         for(size_t j = 0; j < features_cloud->points.size(); j++)
         {
-            feature_point descr_vect (dimensionality);
+            feature_point descriptor_vector (dimensionality);
 
             if(!pcl::isFinite<FeatureT>(features_cloud->points[j]))
                 PCL_WARN("Point %d is NaN\n", (int)j);
 
             for(int idx = 0; idx < dimensionality; idx++)
             {
-                descr_vect[idx] = features_cloud->points[j].histogram[idx];
+                descriptor_vector[idx] = features_cloud->points[j].histogram[idx];
             }
 
-            features.push_back(descr_vect);
+            features.push_back(std::move(descriptor_vector));
         }
     }
 
@@ -348,7 +361,11 @@ public:
         k_search_ = k;
     }
 
-    void calculateFeatures(PointInTPtr& in, PointInTPtr& keypoints, NormalTPtr& normals, std::vector<feature_point>& features)
+    void calculateFeatures(
+        PointInTPtr& in, 
+        PointInTPtr& keypoints, 
+        NormalTPtr& normals, 
+        std::vector<feature_point>& features)
     {
         FeatureTPtr pfhrgbs (new pcl::PointCloud<FeatureT> ());
 
@@ -366,14 +383,14 @@ public:
 
         for(size_t j = 0; j < pfhrgbs->points.size(); j++)
         {
-            feature_point signature (dimensionality);
+            feature_point descriptor_vector (dimensionality);
 
             for(int idx = 0; idx < dimensionality; idx++)
             {
-                signature[idx] = pfhrgbs->points[j].histogram[idx];
+                descriptor_vector[idx] = pfhrgbs->points[j].histogram[idx];
             }
 
-            features.push_back(signature);
+            features.push_back(std::move(descriptor_vector));
         }
 
     }
@@ -409,17 +426,17 @@ public:
 
         for(size_t j = 0; j < features_cloud->points.size(); j++)
         {
-            feature_point descr_vect (dimensionality);
+            feature_point descriptor_vector (dimensionality);
 
             if(!pcl::isFinite<FeatureT>(features_cloud->points[j]))
                 PCL_WARN("Point %d is NaN\n", (int)j);
 
             for(int idx = 0; idx < dimensionality; idx++)
             {
-                descr_vect[idx] = features_cloud->points[j].histogram[idx];
+                descriptor_vector[idx] = features_cloud->points[j].histogram[idx];
             }
 
-            features.push_back(descr_vect);
+            features.push_back(std::move(descriptor_vector));
         }
     }
 
@@ -449,7 +466,11 @@ public:
         nan_indices_ = pcl::PointIndices::Ptr(new pcl::PointIndices);
     }
 
-    void calculateFeatures(PointInTPtr& in, PointInTPtr& keypoints, NormalTPtr& normals, std::vector<feature_point>& features)
+    void calculateFeatures(
+        PointInTPtr& in, 
+        PointInTPtr& keypoints, 
+        NormalTPtr& normals, 
+        std::vector<feature_point>& features)
     {
         FeatureTPtr cshots (new pcl::PointCloud<FeatureT> ());
 
@@ -466,14 +487,14 @@ public:
 
         for(size_t j = 0; j < cshots->points.size(); j++)
         {
-            feature_point signature (dimensionality);
+            feature_point descriptor_vector (dimensionality);
 
             for(int idx = 0; idx < dimensionality; idx++)
             {
-                signature[idx] = cshots->points[j].descriptor[idx];
+                descriptor_vector[idx] = cshots->points[j].descriptor[idx];
             }
 
-            features.push_back(signature);
+            features.push_back(std::move(descriptor_vector));
         }
     }
 
@@ -509,17 +530,17 @@ public:
 
         for(size_t j = 0; j < features_cloud->points.size(); j++)
         {
-            feature_point descr_vect (dimensionality);
+            feature_point descriptor_vector (dimensionality);
 
             if(!pcl::isFinite<FeatureT>(features_cloud->points[j]))
                 PCL_WARN("Point %d is NaN\n", (int)j);
 
             for(int idx = 0; idx < dimensionality; idx++)
             {
-                descr_vect[idx] = features_cloud->points[j].descriptor[idx];
+                descriptor_vector[idx] = features_cloud->points[j].descriptor[idx];
             }
 
-            features.push_back(descr_vect);
+            features.push_back(std::move(descriptor_vector));
         }
     }
 

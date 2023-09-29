@@ -4,6 +4,7 @@
 #define SAVE_TEST_SCENE_BOW
 
 #include <math.h>
+#include <utility>
 #include <time.h>
 #include <algorithm>
 #include <pcl/common/time.h>
@@ -422,7 +423,7 @@ void TestRunner::runDetector() {
         model_score match;
         match.model_id = model.model_id;
         match.score = model_match_scores[i];
-        best_matches.push_back(match);
+        best_matches.push_back(std::move(match));
     }
 
 #ifdef CALC_RUNTIME

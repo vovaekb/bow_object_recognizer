@@ -2,6 +2,7 @@
 //#define DEBUG_DESCRIPTORS_COUNT
 #define DISABLE_DEBUG_LOGS
 
+#include <utility>
 #include <iostream>
 #include <stdio.h>
 #include <cmath>
@@ -30,7 +31,7 @@ BoWTrainer::BoWTrainer(int cluster_count)
 
 void BoWTrainer::add(feature_point descriptor)
 {
-    descriptors_.push_back(descriptor);
+    descriptors_.push_back(std::move(descriptor));
     size_ = size_ + 1;
 }
 
@@ -83,7 +84,7 @@ std::vector<feature_point> BoWTrainer::cluster()
 
     for(int i = 0; i < centers.rows; i++)
     {
-        feature_point center(descr_length);
+        feature_point center_descriptor(descr_length);
 
         if(isinf(centers.at<float>(i, 0)))
         {
@@ -93,10 +94,10 @@ std::vector<feature_point> BoWTrainer::cluster()
 
         for(int j = 0; j < centers.cols; j++)
         {
-            center[j] = centers.at<float>(i, j);
+            center_descriptor[j] = centers.at<float>(i, j);
         }
 
-        vocabulary.push_back(center);
+        vocabulary.push_back(std::move(center_descriptor));
     }
 
     printf("\nvocabulary size: %d\n", (int)vocabulary.size());
@@ -121,7 +122,7 @@ DescriptorMatcher::~DescriptorMatcher()
 
 void DescriptorMatcher::add(std::vector<feature_point>& descriptors)
 {
-    train_descriptors_.insert( train_descriptors_.end(), descriptors.begin(), descriptors.end() );
+    train_descriptors_.emplace(train_descriptors_.end(), std::move(descriptors));
 }
 
 void DescriptorMatcher::setSearchIndexParams(std::string search_index_params)
@@ -205,10 +206,10 @@ void DescriptorMatcher::knnMatch(std::vector<feature_point>& query_descriptors, 
         for(size_t j = 0; j < knn; j++)
         {
             DMatch match (i, indices[0][j], distances[0][j]);
-            descr_matches.push_back(match);
+            descr_matches.push_back(std::move(match));
         }
 
-        matches.push_back( descr_matches );
+        matches.push_back(std::move(descr_matches));
 
         delete[] p.ptr();
     }
