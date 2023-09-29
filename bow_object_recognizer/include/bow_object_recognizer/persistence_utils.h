@@ -21,9 +21,9 @@ namespace PersistenceUtils
             return false;
         }
 
-        for(size_t i = 0; i < vect.size(); i++)
+        for(auto & el : vect)
         {
-            out << vect[i] << " ";
+            out << el << " ";
         }
 
         out.close();
@@ -47,9 +47,9 @@ namespace PersistenceUtils
         std::vector<std::string> strs;
         boost::split(strs, line, boost::is_any_of(" "));
 
-        for(size_t i = 0; i < strs.size(); i++)
+        for(auto & str : strs)
         {
-            float val = static_cast<float> (atof(strs[i].c_str()));
+            float val = static_cast<float> (atof(str.c_str()));
             vect.push_back(val);
         }
 
@@ -89,11 +89,15 @@ namespace PersistenceUtils
 
         boost::filesystem::path gt_files_path = path;
 
-        for (boost::filesystem::directory_iterator it (gt_files_path); it != boost::filesystem::directory_iterator (); ++it)
+        for (boost::filesystem::directory_iterator it (gt_files_path);
+         it != boost::filesystem::directory_iterator (); 
+         ++it)
         {
             std::string file = (it->path().filename()).string();
 
-            if (boost::filesystem::is_regular_file (it->status ()) && file.substr(0,str_length) == search_str && file.find("occlusion") == std::string::npos)
+            if (boost::filesystem::is_regular_file (it->status ()) &&
+             file.substr(0,str_length) == search_str &&
+              file.find("occlusion") == std::string::npos)
             {
                 return true;
             }

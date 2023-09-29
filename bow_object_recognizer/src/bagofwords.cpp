@@ -143,14 +143,14 @@ void DescriptorMatcher::train()
     // Fill a flann matrix with training data and build the flann index
     data = flann::Matrix<float> (new float[train_descriptors_.size() * train_descriptors_[0].size()], train_descriptors_.size(), train_descriptors_[0].size());
 
-    for(size_t i = 0; i < train_descriptors_.size(); i++)
-    {
-        feature_point descriptor = train_descriptors_[i];
+    size_t i = 0;
+    std::for_each(train_descriptors_.begin(), train_descriptors_.end(), [&i, &data](feature_point & descriptor){
         for(size_t j = 0; j < descriptor.size(); j++)
         {
             data[i][j] = descriptor[j];
         }
-    }
+        j++;
+    });
 
 
     if(search_index_params_ == "linear")
@@ -197,7 +197,6 @@ void DescriptorMatcher::knnMatch(std::vector<feature_point>& query_descriptors, 
             p[0][idx] = descriptor[idx];
         }
 
-
         flann::Matrix<int> indices (new int[knn], 1, knn);
         flann::Matrix<float> distances (new float[knn], 1, knn);
         index_->knnSearch(p, indices, distances, knn, flann::SearchParams(512));
@@ -221,10 +220,10 @@ void DescriptorMatcher::convertMatches(std::vector<std::vector<DMatch> > &knn_ma
     matches.clear();
     matches.reserve(knn_matches.size());
 
-    for(size_t i = 0; i < knn_matches.size(); i++)
+    for(auto & match : knn_matches)
     {
-        if(!knn_matches[i].empty())
-            matches.push_back(knn_matches[i][0]);
+        if(!match.empty())
+            matches.push_back(match[0]);
     }
 
 }
@@ -311,9 +310,10 @@ void BoWModelDescriptorExtractor::compute(std::vector<feature_point> model_descr
     }
 
     // TF (term frequency) metric
-    for(size_t i = 0; i < bow_model_descriptor.size(); i++)
+    float descriptor_size = static_cast<float>(model_descriptors.size());
+    for(auto & value : bow_model_descriptor)
     {
-        bow_model_descriptor[i] = bow_model_descriptor[i] / ((float)model_descriptors.size());
+        value = value / descriptor_size;
     }
 
 }

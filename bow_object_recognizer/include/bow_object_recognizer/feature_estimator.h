@@ -169,14 +169,14 @@ public:
         FeatureTPtr features_cloud (new pcl::PointCloud<FeatureT>);
         features_cloud->resize(features.size());
 
-        for(size_t j = 0; j < features.size(); j++)
-        {
+        size_t j = 0;
+        std::for_each(features.begin(), features.end(), [&j, &features_cloud, &dimensionality](feature_point & feature){
             for(int idx = 0; idx < dimensionality; idx++)
             {
-                features_cloud->points[j].descriptor[idx] = features.at(j)[idx];
+                features_cloud->points[j].descriptor[idx] = feature[idx];
             }
-
-        }
+            j++;
+        });
 
         pcl::io::savePCDFileASCII(path.c_str(), *features_cloud);
 
@@ -289,13 +289,14 @@ public:
         FeatureTPtr features_cloud (new pcl::PointCloud<FeatureT>);
         features_cloud->resize(features.size());
 
-        for(size_t j = 0; j < features.size(); j++)
-        {
+        size_t j = 0;
+        std::for_each(features.begin(), features.end(), [&j, &features_cloud, &dimensionality](feature_point & feature){
             for(int idx = 0; idx < dimensionality; idx++)
             {
-                features_cloud->points[j].histogram[idx] = features.at(j)[idx];
+                features_cloud->points[j].descriptor[idx] = feature[idx];
             }
-        }
+            j++;
+        });
 
         pcl::io::savePCDFileASCII(path.c_str(), *features_cloud);
 
@@ -400,13 +401,14 @@ public:
         FeatureTPtr features_cloud (new pcl::PointCloud<FeatureT>);
         features_cloud->resize(features.size());
 
-        for(size_t j = 0; j < features.size(); j++)
-        {
+        size_t j = 0;
+        std::for_each(features.begin(), features.end(), [&j, &features_cloud, &dimensionality](feature_point & feature){
             for(int idx = 0; idx < dimensionality; idx++)
             {
-                features_cloud->points[j].histogram[idx] = features.at(j)[idx];
+                features_cloud->points[j].descriptor[idx] = feature[idx];
             }
-        }
+            j++;
+        });
 
         pcl::io::savePCDFileASCII(path.c_str(), *features_cloud);
 
@@ -503,14 +505,14 @@ public:
         FeatureTPtr features_cloud (new pcl::PointCloud<FeatureT>);
         features_cloud->resize(features.size());
 
-        for(size_t j = 0; j < features.size(); j++)
-        {
+        size_t j = 0;
+        std::for_each(features.begin(), features.end(), [&j, &features_cloud, &dimensionality](feature_point & feature){
             for(int idx = 0; idx < dimensionality; idx++)
             {
-                features_cloud->points[j].descriptor[idx] = features.at(j)[idx];
+                features_cloud->points[j].descriptor[idx] = feature[idx];
             }
-
-        }
+            j++;
+        });
 
         pcl::io::savePCDFileASCII(path.c_str(), *features_cloud);
 
