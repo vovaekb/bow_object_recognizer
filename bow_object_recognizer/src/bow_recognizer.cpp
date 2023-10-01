@@ -332,7 +332,6 @@ void recognizeScene(PointInTPtr& scene_cloud)
     }
 
     vector<model_score> best_matches;
-    sortModelScores sort_model_scores_op;
     sortModelSACAlignmentScores sort_model_sac_align_scores_op;
 
     size_t j = 0;
@@ -352,7 +351,11 @@ void recognizeScene(PointInTPtr& scene_cloud)
     if(best_matches.size())
     {
         // rank matches
-        std::sort(best_matches.begin(), best_matches.end(), sort_model_scores_op);
+        std::sort(best_matches.begin(), best_matches.end(), 
+            [](const model_score& d1, const model_score& d2)
+            { 
+                return d1.score > d2.score 
+            });
 
         if(apply_verification)
         {
@@ -435,7 +438,12 @@ void recognizeScene(PointInTPtr& scene_cloud)
                     printf ("sac_alignment_score for %s: %f\n", match.model_id.c_str(), match.sac_alignment_score);
                 }
 
-                std::sort(best_matches.begin(), best_matches.end(), sort_model_sac_align_scores_op);
+                std::sort(best_matches.begin(), best_matches.end(), 
+                    [](const model_score& d1, const model_score& d2)
+                    { 
+                        return d1.sac_alignment_score < d2.sac_alignment_score 
+                    });
+
 
                 std::cout << "Best matches alignment scores after ranking:\n";
                 for(auto & match : best_matches)
@@ -507,7 +515,11 @@ void recognizeScene(PointInTPtr& scene_cloud)
                     printf ("sac_alignment_score for %s: %f\n", match.model_id.c_str(), match.sac_alignment_score);
                 }
 
-                std::sort(best_matches.begin(), best_matches.end(), sort_model_sac_align_scores_op);
+                std::sort(best_matches.begin(), best_matches.end(), 
+                    [](const model_score& d1, const model_score& d2)
+                    { 
+                        return d1.sac_alignment_score < d2.sac_alignment_score 
+                    });
 
                 std::cout << "Best matches alignment scores after ranking:\n";
                 for(auto & match : best_matches)
@@ -579,7 +591,11 @@ void recognizeScene(PointInTPtr& scene_cloud)
                     printf ("sac_alignment_score for %s: %f\n", match.model_id.c_str(), match.sac_alignment_score);
                 }
 
-                std::sort(best_matches.begin(), best_matches.end(), sort_model_sac_align_scores_op);
+                std::sort(best_matches.begin(), best_matches.end(), 
+                    [](const model_score& d1, const model_score& d2)
+                    { 
+                        return d1.sac_alignment_score < d2.sac_alignment_score 
+                    });
 
                 std::cout << "Best matches alignment scores after ranking:\n";
                 for(auto & match : best_matches)
@@ -651,7 +667,11 @@ void recognizeScene(PointInTPtr& scene_cloud)
                     printf ("sac_alignment_score for %s: %f\n", match.model_id.c_str(), match.sac_alignment_score);
                 }
 
-                std::sort(best_matches.begin(), best_matches.end(), sort_model_sac_align_scores_op);
+                std::sort(best_matches.begin(), best_matches.end(), 
+                    [](const model_score& d1, const model_score& d2)
+                    { 
+                        return d1.sac_alignment_score < d2.sac_alignment_score 
+                    });
 
                 std::cout << "Best matches alignment scores after ranking:\n";
                 for(auto & match : best_matches)

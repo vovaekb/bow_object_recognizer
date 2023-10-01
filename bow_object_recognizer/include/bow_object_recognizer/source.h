@@ -75,13 +75,6 @@ struct model_score
     float sac_alignment_score;
 };
 
-struct sortModelScores
-{
-    bool operator() (const model_score& d1, const model_score& d2)
-    {
-        return d1.score > d2.score;
-    }
-};
 
 struct sortModelSACAlignmentScores
 {

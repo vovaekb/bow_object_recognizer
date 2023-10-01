@@ -433,7 +433,11 @@ void TestRunner::runDetector() {
     // The best matches are ones with higher score (cosine tends to 1)
     // Display results of the matching
 
-    std::sort(best_matches.begin(), best_matches.end(), sort_model_scores_op);
+    std::sort(best_matches.begin(), best_matches.end(), 
+        [](const model_score& d1, const model_score& d2)
+        { 
+            return d1.score > d2.score 
+        });
 
     if(limit_matches)
     {
@@ -557,7 +561,11 @@ void TestRunner::runDetector() {
                     printf ("sac_alignment_score for %s: %f\n", match.model_id.c_str(), match.sac_alignment_score);
                 }
 
-                std::sort(best_matches.begin(), best_matches.end(), sort_model_sac_align_scores_op);
+                std::sort(best_matches.begin(), best_matches.end(), 
+                    [](const model_score& d1, const model_score& d2)
+                    { 
+                        return d1.sac_alignment_score < d2.sac_alignment_score 
+                    });
 
                 std::cout << "Best matches alignment scores after ranking:\n";
                 for(auto & match : best_matches)
@@ -679,7 +687,11 @@ void TestRunner::runDetector() {
                     printf ("sac_alignment_score for %s: %f\n", match.model_id.c_str(), match.sac_alignment_score);
                 }
 
-                std::sort(best_matches.begin(), best_matches.end(), sort_model_sac_align_scores_op);
+                std::sort(best_matches.begin(), best_matches.end(), 
+                    [](const model_score& d1, const model_score& d2)
+                    { 
+                        return d1.sac_alignment_score < d2.sac_alignment_score 
+                    });
 
                 std::cout << "Best matches alignment scores after ranking:\n";
                 for(auto & match : best_matches)
@@ -788,7 +800,11 @@ void TestRunner::runDetector() {
                     printf ("sac_alignment_score for %s: %f\n", match.model_id.c_str(), match.sac_alignment_score);
                 }
 
-                std::sort(best_matches.begin(), best_matches.end(), sort_model_sac_align_scores_op);
+                std::sort(best_matches.begin(), best_matches.end(), 
+                    [](const model_score& d1, const model_score& d2)
+                    { 
+                        return d1.sac_alignment_score < d2.sac_alignment_score 
+                    });
 
                 std::cout << "Best matches alignment scores after ranking:\n";
                 for(auto & match : best_matches)
@@ -899,7 +915,11 @@ void TestRunner::runDetector() {
                     printf ("sac_alignment_score for %s: %f\n", match.model_id.c_str(), match.sac_alignment_score);
                 }
 
-                std::sort(best_matches.begin(), best_matches.end(), sort_model_sac_align_scores_op);
+                std::sort(best_matches.begin(), best_matches.end(), 
+                    [](const model_score& d1, const model_score& d2)
+                    { 
+                        return d1.sac_alignment_score < d2.sac_alignment_score 
+                    });
 
                 std::cout << "Best matches alignment scores after ranking:\n";
                 for(auto & match : best_matches)
