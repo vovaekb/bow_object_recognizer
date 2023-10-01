@@ -23,7 +23,9 @@ public:
 
     KeypointDetector() {}
 
-    virtual void detectKeypoints(const pcl::PointCloud<PointInT>::Ptr &src, const pcl::PointCloud<PointInT>::Ptr &keypoints)=0;
+    virtual void detectKeypoints(
+        const pcl::PointCloud<PointInT>::Ptr &src, 
+        const pcl::PointCloud<PointInT>::Ptr &keypoints)=0;
 
     inline void saveKeypoints(pcl::PointCloud<PointInT>::Ptr &keypoints, std::string path)
     {
@@ -89,7 +91,9 @@ public:
         return resolution;
     }
 
-    void detectKeypoints(const pcl::PointCloud<PointInT>::Ptr &src, const pcl::PointCloud<PointInT>::Ptr &keypoints)
+    void detectKeypoints(
+        const pcl::PointCloud<PointInT>::Ptr &src, 
+        const pcl::PointCloud<PointInT>::Ptr &keypoints)
     {
         std::cout << "---- Perform Uniform Sampling -----\n";
 
@@ -170,7 +174,9 @@ public:
         return resolution;
     }
 
-    void detectKeypoints(const pcl::PointCloud<PointInT>::Ptr &src, const pcl::PointCloud<PointInT>::Ptr &keypoints)
+    void detectKeypoints(
+        const pcl::PointCloud<PointInT>::Ptr &src, 
+        const pcl::PointCloud<PointInT>::Ptr &keypoints)
     {
         // We assume that the keypoint detection is ISS
         std::cout << "---- Perform ISS ----\n";
@@ -239,7 +245,9 @@ public:
         min_contrast_ = min_contrast;
     }
 
-    void detectKeypoints(const pcl::PointCloud<PointInT>::Ptr &src, const pcl::PointCloud<PointInT>::Ptr &keypoints)
+    void detectKeypoints(
+        const pcl::PointCloud<PointInT>::Ptr &src, 
+        const pcl::PointCloud<PointInT>::Ptr &keypoints)
     {
         pcl::PointCloud<pcl::PointWithScale>::Ptr keypoints_tmp (new pcl::PointCloud<pcl::PointWithScale>);
 
@@ -284,7 +292,9 @@ public:
         support_size_ = s;
     }
 
-    void detectKeypoints(const pcl::PointCloud<PointInT>::Ptr &src, const pcl::PointCloud<PointInT>::Ptr &keypoints)
+    void detectKeypoints(
+        const pcl::PointCloud<PointInT>::Ptr &src, 
+        const pcl::PointCloud<PointInT>::Ptr &keypoints)
     {
         std::cout << "\n--------- Perform NARF -----------\n";
 
@@ -335,7 +345,9 @@ public:
         threshold_ = threshold;
     }
 
-    void detectKeypoints(const pcl::PointCloud<PointInT>::Ptr &src, const pcl::PointCloud<PointInT>::Ptr &keypoints)
+    void detectKeypoints(
+        const pcl::PointCloud<PointInT>::Ptr &src, 
+        const pcl::PointCloud<PointInT>::Ptr &keypoints)
     {
         std::cout << "-------- Perform Harris3D -------\n";
 

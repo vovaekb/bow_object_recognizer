@@ -55,7 +55,10 @@ public:
         norm_rad_ = rad;
     }
 
-    void estimate (PointInTPtr &in, PointInTPtr &out, pcl::PointCloud<pcl::Normal>::Ptr &normals)
+    void estimate (
+        PointInTPtr &in, 
+        PointInTPtr &out, 
+        pcl::PointCloud<pcl::Normal>::Ptr &normals)
     {
         if(do_scaling_)
         {

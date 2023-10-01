@@ -133,21 +133,16 @@ void trainVocabulary(string vocabulary_path)
 
 
     // Iterate over all training models
-    for(size_t i = 0; i < training_models.size(); i++)
+    for(auto & training_model : training_models)
     {
-        Model training_model = training_models[i];
-
         printf("\n---------------- Loading model %s ---------------\n", training_model.model_id.c_str());
-
 
         string model_path = training_source->getModelDir(training_model);
 
         if(use_partial_views)
         {
-            for(size_t j = 0; j < training_model.views.size(); j++)
+            for(auto & view_id : training_model.views)
             {
-                std::string view_id = training_model.views[j];
-
                 std::stringstream view_descr_file;
 
                 view_descr_file << model_path << "/views/" << view_id << "_" << feature_descriptor << "_descr.pcd";
@@ -205,10 +200,9 @@ void trainVocabulary(string vocabulary_path)
 
                     cout << "Pass descriptors to the BoW trainer\n\n";
 
-                    for(size_t j = 0; j < descr_vector.size(); j++)
+                    for(auto & descriptor : descr_vector)
                     {
-                        feature_point signature = descr_vector[j];
-                        bow_trainer->add(signature);
+                        bow_trainer->add(descriptor);
                     }
                 }
                 else
@@ -221,10 +215,9 @@ void trainVocabulary(string vocabulary_path)
 
                     cout << "Pass descriptors to the BoW trainer\n\n";
 
-                    for(size_t j = 0; j < descr_vector.size(); j++)
+                    for(auto & descriptor : descr_vector)
                     {
-                        feature_point signature = descr_vector[j];
-                        bow_trainer->add(signature);
+                        bow_trainer->add(descriptor);
                     }
                 }
             }
@@ -299,10 +292,9 @@ void trainVocabulary(string vocabulary_path)
 
                 cout << "Pass descriptors to the BoW trainer\n\n";
 
-                for(size_t j = 0; j < descr_vector.size(); j++)
+                for(auto & descriptor : descr_vector)
                 {
-                    feature_point signature = descr_vector[j];
-                    bow_trainer->add(signature);
+                    bow_trainer->add(descriptor);
                 }
 
             }
@@ -316,10 +308,9 @@ void trainVocabulary(string vocabulary_path)
 
                 cout << "Pass descriptors to the BoW trainer\n\n";
 
-                for(size_t j = 0; j < descr_vector.size(); j++)
+                for(auto & descriptor : descr_vector)
                 {
-                    feature_point signature = descr_vector[j];
-                    bow_trainer->add(signature);
+                    bow_trainer->add(descriptor);
                 }
 
             }
@@ -355,10 +346,9 @@ void trainVocabulary(string vocabulary_path)
     }
 
 
-    for(size_t i = 0; i < training_scenes.size(); i++)
+    for(auto & scene_file : training_scenes)
     {
         PointInTPtr scene_cloud (new pcl::PointCloud<PointInT> ());
-        string scene_file = training_scenes[i];
 
         pcl::io::loadPCDFile(scene_file.c_str(), *scene_cloud);
 
@@ -404,10 +394,9 @@ void trainVocabulary(string vocabulary_path)
 
             feature_estimator->saveFeatures(descr_vector, descr_file);
 
-            for(size_t j = 0; j < descr_vector.size(); j++)
+            for(auto & descriptor : descr_vector)
             {
-                feature_point signature = descr_vector[j];
-                bow_trainer->add(signature);
+                bow_trainer->add(descriptor);
             }
 
         }
@@ -419,10 +408,9 @@ void trainVocabulary(string vocabulary_path)
             std::vector<feature_point> descr_vector;
             feature_estimator->loadFeatures(descr_file, descr_vector);
 
-            for(size_t j = 0; j < descr_vector.size(); j++)
+            for(auto & descriptor : descr_vector.views)
             {
-                feature_point signature = descr_vector[j];
-                bow_trainer->add(signature);
+                bow_trainer->add(descriptor);
             }
 
         }

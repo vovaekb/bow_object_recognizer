@@ -335,16 +335,15 @@ void recognizeScene(PointInTPtr& scene_cloud)
     sortModelScores sort_model_scores_op;
     sortModelSACAlignmentScores sort_model_sac_align_scores_op;
 
-
-    for(size_t i = 0; i < model_match_scores.size(); i++)
-    {
-//        if(apply_thresh && match_scores[i] < score_thresh) continue;
-        Model model = training_models[i];
+    size_t j = 0;
+    std::for_each(model_match_scores.begin(), model_match_scores.end(), [&j, &training_models, &best_matches](float & model_match_score){
+        Model model = training_models[j];
         model_score match;
         match.model_id = model.model_id;
-        match.score = model_match_scores[i];
-        best_matches.push_back(match);
-    }
+        match.score = model_match_score;
+        best_matches.push_back(std::move(match));
+        j++;
+    });
 
     model_match_scores.clear();
 
@@ -694,10 +693,10 @@ void recognizeScene(PointInTPtr& scene_cloud)
 
             bool is_found = false;
 
-            for(int j = 0; j < best_matches.size(); j++)
+            for(auto & match : best_matches)
             {
-                std::string model_id = best_matches[j].model_id;
-                if(model_id == model_id) is_found = true;
+                std::string match_model_id = match.model_id;
+                if(match_model_id == model_id) is_found = true;
             }
 
             cout << "Model " << model_id << "\n";

@@ -359,17 +359,14 @@ void TestRunner::runDetector() {
 
     if(use_partial_views)
     {
-        for(size_t i = 0; i < training_models.size(); i++)
+        for(auto & training_model : training_models)
         {
-            Model training_model = training_models[i];
             std::vector<float> view_match_scores (training_model.views.size());
 
             std::cout << "Loading views for model " << training_model.model_id << "\n";
 
-            for(size_t j = 0; j < training_model.views.size(); j++)
+            for(auto & view_id : training_model.views)
             {
-                std::string view_id = training_model.views[j];
-
                 std::stringstream bow_view_sample_key;
                 bow_view_sample_key << training_model.model_id << "_" << view_id;
 
@@ -395,9 +392,9 @@ void TestRunner::runDetector() {
     }
     else
     {
-        for(size_t i = 0; i < training_models.size(); i++)
+        for(auto & training_model : training_models)
         {
-            std::string model_id = training_models[i].model_id;
+            std::string model_id = training_model.model_id;
             bow_vector model_bow_descriptor = training_bow_descriptors[model_id];
 
             float bow_dist = 0;
@@ -416,15 +413,15 @@ void TestRunner::runDetector() {
     sortModelScores sort_model_scores_op;
     sortModelSACAlignmentScores sort_model_sac_align_scores_op;
 
-    for(size_t i = 0; i < model_match_scores.size(); i++)
-    {
-//        if(apply_thresh && match_scores[i] < score_thresh) continue;
-        Model model = training_models[i];
+    size_t j = 0;
+    std::for_each(model_match_scores.begin(), model_match_scores.end(), [&j, &training_models, &best_matches](float & model_match_score) {
+        Model model = training_models[j];
         model_score match;
         match.model_id = model.model_id;
-        match.score = model_match_scores[i];
+        match.score = model_match_score;
         best_matches.push_back(std::move(match));
-    }
+        j++;
+    });
 
 #ifdef CALC_RUNTIME
     double recogn_time = sw.getTime();
@@ -473,11 +470,11 @@ void TestRunner::runDetector() {
 
                 SACAlignment<FeatureInT> alignment;
 
-                for(size_t i = 0; i < best_matches.size(); i++)
+                for(auto & match : best_matches)
                 {
                     FeatureCloud<FeatureInT> candidate_feature_cloud;
 
-                    string model_id = best_matches[i].model_id;
+                    string model_id = match.model_id;
                     candidate_feature_cloud.setId(model_id);
 
                     string model_path = training_source->getModelDir(model_id);
@@ -555,17 +552,17 @@ void TestRunner::runDetector() {
                 }
 
                 std::cout << "Best matches alignment scores:\n";
-                for(size_t i = 0; i < best_matches.size(); i++)
+                for(auto & match : best_matches)
                 {
-                    printf ("sac_alignment_score for %s: %f\n", best_matches[i].model_id.c_str(), best_matches[i].sac_alignment_score);
+                    printf ("sac_alignment_score for %s: %f\n", match.model_id.c_str(), match.sac_alignment_score);
                 }
 
                 std::sort(best_matches.begin(), best_matches.end(), sort_model_sac_align_scores_op);
 
                 std::cout << "Best matches alignment scores after ranking:\n";
-                for(size_t i = 0; i < best_matches.size(); i++)
+                for(auto & match : best_matches)
                 {
-                    printf ("sac_alignment_score for %s: %f\n", best_matches[i].model_id.c_str(), best_matches[i].sac_alignment_score);
+                    printf ("sac_alignment_score for %s: %f\n", match.model_id.c_str(), match.sac_alignment_score);
                 }
             }
             else if(feature_descriptor.compare("shot") == 0)
@@ -597,11 +594,11 @@ void TestRunner::runDetector() {
 
                 SACAlignment<FeatureInT> alignment;
 
-                for(size_t i = 0; i < best_matches.size(); i++)
+                for(auto & match : best_matches)
                 {
                     FeatureCloud<FeatureInT> candidate_feature_cloud;
 
-                    string model_id = best_matches[i].model_id;
+                    string model_id = match.model_id;
                     candidate_feature_cloud.setId(model_id);
 
                     string model_path = training_source->getModelDir(model_id);
@@ -677,17 +674,17 @@ void TestRunner::runDetector() {
                 }
 
                 std::cout << "Best matches alignment scores:\n";
-                for(size_t i = 0; i < best_matches.size(); i++)
+                for(auto & match : best_matches)
                 {
-                    printf ("sac_alignment_score for %s: %f\n", best_matches[i].model_id.c_str(), best_matches[i].sac_alignment_score);
+                    printf ("sac_alignment_score for %s: %f\n", match.model_id.c_str(), match.sac_alignment_score);
                 }
 
                 std::sort(best_matches.begin(), best_matches.end(), sort_model_sac_align_scores_op);
 
                 std::cout << "Best matches alignment scores after ranking:\n";
-                for(size_t i = 0; i < best_matches.size(); i++)
+                for(auto & match : best_matches)
                 {
-                    printf ("sac_alignment_score for %s: %f\n", best_matches[i].model_id.c_str(), best_matches[i].sac_alignment_score);
+                    printf ("sac_alignment_score for %s: %f\n", match.model_id.c_str(), match.sac_alignment_score);
                 }
             }
             else if(feature_descriptor.compare("pfhrgb") == 0)
@@ -706,11 +703,11 @@ void TestRunner::runDetector() {
 
                 SACAlignment<FeatureInT> alignment;
 
-                for(size_t i = 0; i < best_matches.size(); i++)
+                for(auto & match : best_matches)
                 {
                     FeatureCloud<FeatureInT> candidate_feature_cloud;
 
-                    string model_id = best_matches[i].model_id;
+                    string model_id = match.model_id;
                     candidate_feature_cloud.setId(model_id);
 
                     string model_path = training_source->getModelDir(model_id);
@@ -786,17 +783,17 @@ void TestRunner::runDetector() {
                 }
 
                 std::cout << "Best matches alignment scores:\n";
-                for(size_t i = 0; i < best_matches.size(); i++)
+                for(auto & match : best_matches)
                 {
-                    printf ("sac_alignment_score for %s: %f\n", best_matches[i].model_id.c_str(), best_matches[i].sac_alignment_score);
+                    printf ("sac_alignment_score for %s: %f\n", match.model_id.c_str(), match.sac_alignment_score);
                 }
 
                 std::sort(best_matches.begin(), best_matches.end(), sort_model_sac_align_scores_op);
 
                 std::cout << "Best matches alignment scores after ranking:\n";
-                for(size_t i = 0; i < best_matches.size(); i++)
+                for(auto & match : best_matches)
                 {
-                    printf ("sac_alignment_score for %s: %f\n", best_matches[i].model_id.c_str(), best_matches[i].sac_alignment_score);
+                    printf ("sac_alignment_score for %s: %f\n", match.model_id.c_str(), match.sac_alignment_score);
                 }
             }
             else if(feature_descriptor.compare("cshot") == 0)
@@ -816,11 +813,11 @@ void TestRunner::runDetector() {
 
                 SACAlignment<FeatureInT> alignment;
 
-                for(size_t i = 0; i < best_matches.size(); i++)
+                for(auto & match : best_matches)
                 {
                     FeatureCloud<FeatureInT> candidate_feature_cloud;
 
-                    string model_id = best_matches[i].model_id;
+                    string model_id = match.model_id;
                     candidate_feature_cloud.setId(model_id);
 
                     string model_path = training_source->getModelDir(model_id);
@@ -897,17 +894,17 @@ void TestRunner::runDetector() {
                 }
 
                 std::cout << "Best matches alignment scores:\n";
-                for(size_t i = 0; i < best_matches.size(); i++)
+                for(auto & match : best_matches)
                 {
-                    printf ("sac_alignment_score for %s: %f\n", best_matches[i].model_id.c_str(), best_matches[i].sac_alignment_score);
+                    printf ("sac_alignment_score for %s: %f\n", match.model_id.c_str(), match.sac_alignment_score);
                 }
 
                 std::sort(best_matches.begin(), best_matches.end(), sort_model_sac_align_scores_op);
 
                 std::cout << "Best matches alignment scores after ranking:\n";
-                for(size_t i = 0; i < best_matches.size(); i++)
+                for(auto & match : best_matches)
                 {
-                    printf ("sac_alignment_score for %s: %f\n", best_matches[i].model_id.c_str(), best_matches[i].sac_alignment_score);
+                    printf ("sac_alignment_score for %s: %f\n", match.model_id.c_str(), match.sac_alignment_score);
                 }
             }
 
@@ -919,8 +916,9 @@ void TestRunner::runDetector() {
         output_ << scene_name << "\n";
 
         for(int i = 0; i < best_matches.size(); i++)
+        for(auto & match : best_matches)
         {
-            std::string model_id = best_matches[i].model_id;
+            std::string model_id = match.model_id;
 
             bool is_present = false;
 
@@ -935,9 +933,9 @@ void TestRunner::runDetector() {
 
             cout << model_id << ": " << is_present << "\n"; // " - " << match.score << "\n";
 
-            cout << best_matches[i].score << ":" << is_present << "\n";
+            cout << match.score << ":" << is_present << "\n";
 
-            output_ << best_matches[i].score << ":" << is_present << "\n";
+            output_ << match.score << ":" << is_present << "\n";
         }
 
         output_ << "\n";

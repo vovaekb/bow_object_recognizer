@@ -19,6 +19,7 @@
 
 using namespace cv;
 
+
 int isnan_float(float f) { return (f != f); }
 
 DMatch::DMatch(int _query_idx, int _train_idx, float _distance) : query_idx(_query_idx), train_idx(_train_idx), distance(_distance) {}
@@ -282,15 +283,8 @@ void BoWModelDescriptorExtractor::loadMatcherIndex()
     printf("[BoWModelDescriptorExtractor::loadMatcherIndex] vocabulary size: %d\n", descriptor_size);
 }
 
-//void BoWModelDescriptorExtractor::clear()
-//{
-//    descriptor_size_ = 0;
-//    dmatcher_->clear();
-//}
-
 BoWModelDescriptorExtractor::~BoWModelDescriptorExtractor() {
     descriptor_size_ = 0;
-//    dmatcher_->clear();
     dmatcher_.reset();
 }
 
