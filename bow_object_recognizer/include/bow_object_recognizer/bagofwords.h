@@ -2,13 +2,13 @@
 #define BAGOFWORDS_H
 
 /**
-  * Classes:
-  * BoWTrainer
-  * BoWModelDescriptorExtractor
-  * DescriptorMatcher
-  * Structures:
-  * DMatch
-  */
+ * Classes:
+ * BoWTrainer
+ * BoWModelDescriptorExtractor
+ * DescriptorMatcher
+ * Structures:
+ * DMatch
+ */
 
 #include <vector>
 #include <pcl/point_types.h>
@@ -36,12 +36,12 @@ public:
     typedef pcl::PointXYZRGB PointInT;
     typedef boost::shared_ptr<BoWTrainer> Ptr;
 
-    BoWTrainer(int cluster_count);
+    explicit BoWTrainer(int cluster_count);
 
     // Add descriptor to the training set of descriptors
     void add(feature_point descriptor);
 
-    void setVocabPath(std::string& vocabulary_path);
+    void setVocabPath(std::string &vocabulary_path);
 
     void setCentersInitFlag(std::string centers_init_flag);
 
@@ -65,9 +65,9 @@ protected:
 };
 
 /*
-* Flann descriptor matcher
-*
-*/
+ * Flann descriptor matcher
+ *
+ */
 
 class DescriptorMatcher
 {
@@ -78,17 +78,17 @@ public:
     DescriptorMatcher(std::string index_file_path, std::string training_data_file_path);
 
     ~DescriptorMatcher();
-    void add(std::vector<feature_point>& descriptors);
+    void add(std::vector<feature_point> &descriptors);
     void setSearchIndexParams(std::string search_index_params);
     void clear();
     void train();
-    void match(std::vector<feature_point>& query_descriptors, std::vector<DMatch>& matches);
-    void knnMatch(std::vector<feature_point>& query_descriptors, std::vector<std::vector<DMatch> >& matches, int knn);
-    void convertMatches(std::vector<std::vector<DMatch> >& knn_matches, std::vector<DMatch>& matches);
-    void loadIndex(int& data_length);
+    void match(std::vector<feature_point> &query_descriptors, std::vector<DMatch> &matches);
+    void knnMatch(std::vector<feature_point> &query_descriptors, std::vector<std::vector<DMatch>> &matches, int knn);
+    void convertMatches(std::vector<std::vector<DMatch>> &knn_matches, std::vector<DMatch> &matches);
+    void loadIndex(int &data_length);
 
 protected:
-    flann::Index<DistT> * index_;
+    flann::Index<DistT> *index_;
     flann::Matrix<float> data;
     std::vector<feature_point> train_descriptors_;
     int added_desc_count_;
@@ -113,14 +113,14 @@ public:
 
     ~BoWModelDescriptorExtractor();
 
-    void setVocabulary(std::vector<feature_point> vocabulary );
+    void setVocabulary(std::vector<feature_point> vocabulary);
     void setDescriptorSize(int descriptor_size);
     void setSearchIndexParams(std::string search_index_params);
     std::vector<feature_point> getVocabulary();
     int descriptorSize();
     void loadMatcherIndex();
-//    void clear();
-    void compute(std::vector<feature_point> model_descriptors, bow_vector& bow_model_descriptor);
+    //    void clear();
+    void compute(std::vector<feature_point> model_descriptors, bow_vector &bow_model_descriptor);
 
 protected:
     DescriptorMatcher::Ptr dmatcher_;
