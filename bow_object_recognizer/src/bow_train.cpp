@@ -65,6 +65,53 @@ void printParams()
               "knn search index params: " << knn_search_index_params << "\n";
 }
 
+void trainModelBowDescriptors(Model& training_model, std::map<string, bow_vector> bow_descriptors)
+{
+    string model_path = training_source->getModelDir(training_model);
+
+    if(use_partial_views)
+    {
+        for(size_t j = 0; j < training_model.views.size(); j++)
+        {
+            std::stringstream descr_file;
+
+            string view_id = training_model.views[j];
+
+            std::cout << "Processing view " << view_id << "\n";
+
+            std::stringstream bow_sample_id;
+            bow_sample_id << training_model.model_id << "_" << view_id;
+
+            descr_file << model_path << "/views/" << view_id << "_" << feature_descriptor << "_descr.pcd";
+
+            vector<feature_point> descriptors_vect;
+
+            feature_estimator->loadFeatures(descr_file.str(), descriptors_vect);
+
+            bow_vector& view_bow_descr = bow_descriptors[bow_sample_id.str()];
+            bow_extractor->compute(descriptors_vect, view_bow_descr);
+        }
+    }
+    else
+    {
+        std::stringstream descr_file;
+
+        std::stringstream bow_sample_id;
+        bow_sample_id << training_model.model_id;
+
+        descr_file << model_path << "/" << feature_descriptor << "_descr.pcd";
+
+        vector<feature_point> descriptors_vect;
+
+        feature_estimator->loadFeatures(descr_file.str(), descriptors_vect);
+
+        std::cout << "Compute boW for model " << training_model.model_id << "\n";
+
+        bow_vector& model_bow_descr = bow_descriptors[bow_sample_id.str()];
+        bow_extractor->compute(descriptors_vect, model_bow_descr);
+    }
+}
+
 void trainBowDescriptors(BoWModelDescriptorExtractor::Ptr& bow_extractor, std::vector<feature_point>& vocabulary)
 {
     cout << "[trainBowDescriptors] Loading models ...\n";
@@ -85,62 +132,40 @@ void trainBowDescriptors(BoWModelDescriptorExtractor::Ptr& bow_extractor, std::v
     typedef std::vector<float> bow_vector;
     std::map<string, bow_vector> bow_descriptors;
 
-
     int training_model_samples_number = training_source->getModelSamplesNumber();
 
     std::cout << "Training model samples number is: " << training_model_samples_number << "\n";
-
     std::cout << training_models.size() << " training models have been loaded\n";
 
-    for(auto & training_model : training_models)
+    int threads_num = 4;
+    std::vector<std::thread> threads;
+    int training_models_chunk_size = object_templates.size() / threads_num;
+    int training_models_number = training_models.size();
+
+    for (int i = 0; i < threads_num; i++)
     {
-        std::cout << "\n\nProcessing model " << training_model.model_id << "\n";
-
-        string model_path = training_source->getModelDir(training_model);
-
-        if(use_partial_views)
-        {
-            for(size_t j = 0; j < training_model.views.size(); j++)
+        threads.emplace_back([&]() {
+            int start = i * training_models_chunk_size;
+            int end = (i == threads_num - 1) ? training_models_number : (i + 1) * training_models_chunk_size;
+            for (int j = start; j < end; j++)
             {
-                std::stringstream descr_file;
+                auto training_model = training_models[j];
 
-                string view_id = training_model.views[j];
-
-                std::cout << "Processing view " << view_id << "\n";
-
-                std::stringstream bow_sample_id;
-                bow_sample_id << training_model.model_id << "_" << view_id;
-
-                descr_file << model_path << "/views/" << view_id << "_" << feature_descriptor << "_descr.pcd";
-
-                vector<feature_point> descriptors_vect;
-
-                feature_estimator->loadFeatures(descr_file.str(), descriptors_vect);
-
-                bow_vector& view_bow_descr = bow_descriptors[bow_sample_id.str()];
-                bow_extractor->compute(descriptors_vect, view_bow_descr);
+                std::cout << "\n\nProcessing model " << training_model.model_id << "\n";
+                trainModelBowDescriptors(&training_model, &bow_descriptors);
             }
-        }
-        else
+        });
+    }
+
+    for (auto &&t : threads)
+    {
+        if (t.joinable())
         {
-            std::stringstream descr_file;
-
-            std::stringstream bow_sample_id;
-            bow_sample_id << training_model.model_id;
-
-            descr_file << model_path << "/" << feature_descriptor << "_descr.pcd";
-
-            vector<feature_point> descriptors_vect;
-
-            feature_estimator->loadFeatures(descr_file.str(), descriptors_vect);
-
-            std::cout << "Compute boW for model " << training_model.model_id << "\n";
-
-            bow_vector& model_bow_descr = bow_descriptors[bow_sample_id.str()];
-            bow_extractor->compute(descriptors_vect, model_bow_descr);
+            t.join();
         }
 
     }
+    threads.clear();
 
 
     // Calculate the number of models containing the word
