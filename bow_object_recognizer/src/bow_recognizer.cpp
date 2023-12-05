@@ -63,10 +63,10 @@ string training_data_file ("training_data.h5");
 string test_name = "score_thresh_test";
 
 // Shared parameters
-int vocabulary_size (500);
-bool perform_voxelizing (false);
+auto vocabulary_size {500};
+auto perform_voxelizing {false};
 
-int norm_est_k (10);
+auto norm_est_k {10};
 //float norm_rad (0.02f); // 0.01f // added
 float descr_rad (0.05f); // 0.05f
 
@@ -75,15 +75,15 @@ float voxel_grid_size (0.01f);
 // Uniform Sampling
 float us_radius;
 // ISS
-int iss_salient_rad_factor(6);
-int iss_non_max_rad_factor(4);
+auto iss_salient_rad_factor(6);
+auto iss_non_max_rad_factor(4);
 // Harris
 float harris_thresh (0.0001);
 float harris_radius (0.01);
 
 // Threshold for rejecting wrong detections
 float score_thresh (0.05); // 0.00015
-int best_models_k (5);
+auto best_models_k (5);
 string feature_descriptor ("fpfh");
 string test_scenes_dir;
 std::string test_scene;
@@ -236,7 +236,7 @@ void recognizeScene(PointInTPtr& scene_cloud)
     for(size_t i = 0; i < scene_keypoints->points.size(); i++)
     {
         if(!pcl::isFinite<PointInT>(scene_keypoints->points[i]))
-            PCL_WARN("Keypoint %d is NaN\n", (int)i);
+            PCL_WARN("Keypoint %d is NaN\n", static_cast<int>(i));
     }
 
     std::vector<float> query_bow_descriptor;
@@ -244,7 +244,7 @@ void recognizeScene(PointInTPtr& scene_cloud)
     bow_extractor->compute(descriptors_vect, query_bow_descriptor);
 
     // Calculate the number of models containing the word
-    vocabulary_size = (int)query_bow_descriptor.size();
+    vocabulary_size = static_cast<int>(query_bow_descriptor.size());
 
     std::vector<float> word_occurrences;
     word_occurrences.resize(vocabulary_size, 0);
@@ -266,9 +266,9 @@ void recognizeScene(PointInTPtr& scene_cloud)
     // Calculate idf-index
     for(size_t idx = 0; idx < query_bow_descriptor.size(); idx++)
     {
-        float word_occurrences_n = word_occurrences[idx];
+        auto word_occurrences_n = word_occurrences[idx];
 
-        float word_idf = (word_occurrences_n != 0 ? log10(training_model_samples_number / word_occurrences_n) : 0);
+        decltype(word_occurrences_n) word_idf = (word_occurrences_n != 0 ? log10(training_model_samples_number / word_occurrences_n) : 0);
 
         query_bow_descriptor[idx] = word_idf * query_bow_descriptor[idx];
     }
@@ -296,7 +296,7 @@ void recognizeScene(PointInTPtr& scene_cloud)
 
                 bow_vector view_bow_descriptor = training_bow_descriptors[bow_view_sample_key.str()];
 
-                float bow_dist = 0;
+                auto bow_dist = 0;
                 for(size_t idx = 0; idx < view_bow_descriptor.size(); idx++)
                 {
                     bow_dist = bow_dist + view_bow_descriptor[idx] * query_bow_descriptor[idx];
@@ -307,7 +307,7 @@ void recognizeScene(PointInTPtr& scene_cloud)
 
             std::sort(view_match_scores.begin(), view_match_scores.end(), std::greater<float>());
 
-            float best_view_score = view_match_scores[0];
+            auto best_view_score = view_match_scores[0];
 
             view_match_scores.clear();
 
@@ -321,7 +321,7 @@ void recognizeScene(PointInTPtr& scene_cloud)
             string model_id = training_models[i].model_id;
             bow_vector model_bow_descriptor = training_bow_descriptors[model_id];
 
-            float bow_dist = 0;
+            auto bow_dist = 0;
             for(size_t idx = 0; idx < model_bow_descriptor.size(); idx++)
             {
                 bow_dist = bow_dist + model_bow_descriptor[idx] * query_bow_descriptor[idx];
@@ -424,7 +424,7 @@ void recognizeScene(PointInTPtr& scene_cloud)
 
                 for(size_t i = 0; i < alignment_results.size(); i++)
                 {
-                    printf ("Fitness score for model %d: %f\n", (int)i, alignment_results[i].fitness_score);
+                    printf ("Fitness score for model %d: %f\n", static_cast<int>(i), alignment_results[i].fitness_score);
                 }
 
                 for(size_t i = 0; i < best_matches.size(); i++)
@@ -501,7 +501,7 @@ void recognizeScene(PointInTPtr& scene_cloud)
 
                 for(size_t i = 0; i < alignment_results.size(); i++)
                 {
-                    printf ("Fitness score for model %d: %f\n", (int)i, alignment_results[i].fitness_score);
+                    printf ("Fitness score for model %d: %f\n", static_cast<int>(i), alignment_results[i].fitness_score);
                 }
 
                 for(size_t i = 0; i < best_matches.size(); i++)
@@ -577,7 +577,7 @@ void recognizeScene(PointInTPtr& scene_cloud)
 
                 for(size_t i = 0; i < alignment_results.size(); i++)
                 {
-                    printf ("Fitness score for model %d: %f\n", (int)i, alignment_results[i].fitness_score);
+                    printf ("Fitness score for model %d: %f\n", static_cast<int>(i), alignment_results[i].fitness_score);
                 }
 
                 for(size_t i = 0; i < best_matches.size(); i++)
@@ -653,7 +653,7 @@ void recognizeScene(PointInTPtr& scene_cloud)
 
                 for(size_t i = 0; i < alignment_results.size(); i++)
                 {
-                    printf ("Fitness score for model %d: %f\n", (int)i, alignment_results[i].fitness_score);
+                    printf ("Fitness score for model %d: %f\n", static_cast<int>(i), alignment_results[i].fitness_score);
                 }
 
                 for(size_t i = 0; i < best_matches.size(); i++)
@@ -1004,7 +1004,7 @@ int main(int argc, char** argv)
         PointInTPtr scene_cloud (new pcl::PointCloud<PointInT> ());
         pcl::io::loadPCDFile(test_scene.c_str(), *scene_cloud);
 
-        printf("scene cloud has size: %d\n", (int)scene_cloud->points.size());
+        printf("scene cloud has size: %d\n", static_cast<int>(scene_cloud->points.size()));
 
         recognizeScene(scene_cloud);
     }
