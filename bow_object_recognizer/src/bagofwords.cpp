@@ -69,11 +69,11 @@ std::vector<feature_point> BoWTrainer::cluster()
     Mat labels;
     Mat centers(cluster_count_, descr_length, points.type());
 
-    for (int i = 0; i < points.rows; i++)
+    for (auto i = 0; i < points.rows; i++)
     {
         feature_point descriptor = descriptors_[i];
 
-        for (int j = 0; j < points.cols; j++)
+        for (auto j = 0; j < points.cols; j++)
         {
             points.at<float>(i, j) = descriptor[j];
         }
@@ -82,7 +82,7 @@ std::vector<feature_point> BoWTrainer::cluster()
     // TermCriteria::EPS+TermCriteria::COUNT, 10, 1.0
     cv::kmeans(points, cluster_count_, labels, cv::TermCriteria(TermCriteria::MAX_ITER + TermCriteria::EPS, 10000, 0.0001), 3, kmeans_centers_init_flag_, centers);
 
-    for (int i = 0; i < centers.rows; i++)
+    for (auto i = 0; i < centers.rows; i++)
     {
         feature_point center_descriptor(descr_length);
 
@@ -92,7 +92,7 @@ std::vector<feature_point> BoWTrainer::cluster()
             continue;
         }
 
-        for (int j = 0; j < centers.cols; j++)
+        for (auto j = 0; j < centers.cols; j++)
         {
             center_descriptor[j] = centers.at<float>(i, j);
         }
@@ -186,11 +186,11 @@ void DescriptorMatcher::knnMatch(std::vector<feature_point> &query_descriptors, 
     for (size_t i = 0; i < query_descriptors.size(); i++)
     {
         feature_point descriptor = query_descriptors[i];
-        int descr_length = (int)descriptor.size();
+        auto descr_length = descriptor.size();
 
         flann::Matrix<float> p = flann::Matrix<float>(new float[descr_length], 1, descr_length);
 
-        for (int idx = 0; idx < descr_length; idx++)
+        for (auto idx = 0; idx < descr_length; idx++)
         {
             p[0][idx] = descriptor[idx];
         }
@@ -230,7 +230,7 @@ void DescriptorMatcher::loadIndex(int &data_length)
 
     flann::load_from_file(data, training_data_file_path_, "training_data");
 
-    data_length = (int)data.rows;
+    data_length = static_cast<int>(data.rows);
 
     std::cout << "Loading index from file " << index_file_path_ << "\n";
 
@@ -271,7 +271,7 @@ int BoWModelDescriptorExtractor::descriptorSize()
 
 void BoWModelDescriptorExtractor::loadMatcherIndex()
 {
-    int descriptor_size;
+    auto descriptor_size;
     dmatcher_->loadIndex(descriptor_size);
 
     setDescriptorSize(descriptor_size);
@@ -295,13 +295,13 @@ void BoWModelDescriptorExtractor::compute(std::vector<feature_point> model_descr
 
     for (auto &match : matches)
     {
-        int train_idx = match.train_idx;
+        auto train_idx = match.train_idx;
 
         bow_model_descriptor[train_idx] = bow_model_descriptor[train_idx] + 1.f;
     }
 
     // TF (term frequency) metric
-    float descriptor_size = static_cast<float>(model_descriptors.size());
+    auto descriptor_size = static_cast<float>(model_descriptors.size());
     for (auto &value : bow_model_descriptor)
     {
         value = value / descriptor_size;
