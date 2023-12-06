@@ -100,7 +100,7 @@ std::vector<feature_point> BoWTrainer::cluster()
         vocabulary.push_back(std::move(center_descriptor));
     }
 
-    printf("\nvocabulary size: %d\n", (int)vocabulary.size());
+    printf("\nvocabulary size: %d\n", static_cast<int>(vocabulary.size()));
 #endif
 
     return vocabulary;

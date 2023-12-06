@@ -156,7 +156,7 @@ public:
 
         PCL_INFO("SAC-IA alignment is complete\n");
 
-        result.fitness_score = (float) sac_ia_.getFitnessScore (max_correspondence_distance_);
+        result.fitness_score = static_cast<float>( sac_ia_.getFitnessScore (max_correspondence_distance_));
         result.final_transformation = sac_ia_.getFinalTransformation ();
     }
 
@@ -193,7 +193,7 @@ public:
             if (r.fitness_score < lowest_score)
             {
                 lowest_score = r.fitness_score;
-                best_template = (int) i;
+                best_template = static_cast<int>(i);
             }
         }
 

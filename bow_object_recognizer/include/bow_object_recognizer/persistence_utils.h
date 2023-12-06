@@ -85,7 +85,7 @@ namespace PersistenceUtils
         ss << scene << "_" << model;
 
         std::string search_str = ss.str();
-        int str_length = (int)search_str.size();
+        int str_length = static_cast<int>(search_str.size());
 
         boost::filesystem::path gt_files_path = path;
 

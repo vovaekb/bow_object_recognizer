@@ -104,7 +104,7 @@ public:
         for(size_t i = 0; i < normals->points.size(); i++)
         {
             if(!pcl::isFinite<pcl::Normal>(normals->points[i]))
-                PCL_WARN("Normal %d is NaN\n", (int)i);
+                PCL_WARN("Normal %d is NaN\n", static_cast<int>(i));
         }
 
         mapping.clear();
@@ -116,7 +116,7 @@ public:
             pcl::copyPointCloud(*cloud_tmp, mapping, *out);
         }
 
-        PCL_INFO("The number of normals: %d\n\n", (int)normals->points.size());
+        PCL_INFO("The number of normals: %d\n\n", static_cast<int>(normals->points.size()));
     }
 };
 

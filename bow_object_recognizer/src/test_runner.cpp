@@ -287,15 +287,15 @@ void TestRunner::runDetector() {
     {
         if (! pcl_isfinite((*scene_keypoints)[i].x))
         {
-            PCL_WARN("Scene keypoint %d has NaN in x\n", (int)i);
+            PCL_WARN("Scene keypoint %d has NaN in x\n", static_cast<int>(i));
         }
         else if(! pcl_isfinite((*scene_keypoints)[i].y))
         {
-            PCL_WARN("Scene keypoint %d has NaN in y\n", (int)i);
+            PCL_WARN("Scene keypoint %d has NaN in y\n", static_cast<int>(i));
         }
         else if(! pcl_isfinite((*scene_keypoints)[i].z))
         {
-            PCL_WARN("Scene keypoint %d has NaN in z\n", (int)i);
+            PCL_WARN("Scene keypoint %d has NaN in z\n", static_cast<int>(i));
         }
     }
 
@@ -307,7 +307,7 @@ void TestRunner::runDetector() {
 
     bow_extractor->compute(descriptors_vect, query_bow_descriptor);
 
-    vocabulary_size = (int)query_bow_descriptor.size();
+    vocabulary_size = static_cast<int>(query_bow_descriptor.size());
 
     // Calculate the number of models containing the word
     std::vector<float> word_occurrences;
@@ -495,7 +495,7 @@ void TestRunner::runDetector() {
                     for(size_t j = 0; j < candidate_features->points.size(); j++)
                     {
                         if(!pcl_isfinite(candidate_features->at(j).histogram[0])) {
-                            PCL_WARN("Point %d is NaN\n", (int)j);
+                            PCL_WARN("Point %d is NaN\n", static_cast<int>(j));
                             nan_points->indices.push_back(j);
                         }
                     }
@@ -522,7 +522,7 @@ void TestRunner::runDetector() {
                     PointInTPtr keypoints (new pcl::PointCloud<PointInT>);
                     pcl::io::loadPCDFile(keypoints_cloud_path, *keypoints);
 
-                    PCL_INFO("Candidate keypoints: %d\n", (int)keypoints->points.size());
+                    PCL_INFO("Candidate keypoints: %d\n", static_cast<int>(keypoints->points.size()));
 
                     // Remove keypoints corresponding to NaN feature points
                     if(nan_points->indices.size() > 0)
@@ -534,7 +534,7 @@ void TestRunner::runDetector() {
                         extract.filter(*keypoints);
                     }
 
-                    PCL_INFO("Candidate keypoints after removal NaNs: %d\n", (int)keypoints->points.size());
+                    PCL_INFO("Candidate keypoints after removal NaNs: %d\n", static_cast<int>(keypoints->points.size()));
 
                     candidate_feature_cloud.setInputCloud(keypoints);
 
@@ -547,7 +547,7 @@ void TestRunner::runDetector() {
 
                 for(size_t i = 0; i < alignment_results.size(); i++)
                 {
-                    printf ("Fitness score for model %d: %f\n", (int)i, alignment_results[i].fitness_score);
+                    printf ("Fitness score for model %d: %f\n", static_cast<int>(i), alignment_results[i].fitness_score);
                 }
 
                 for(size_t i = 0; i < best_matches.size(); i++)
@@ -593,7 +593,10 @@ void TestRunner::runDetector() {
 
                     for(int idx = 0; idx < dimensionality; idx++)
                     {
-                        if(!pcl_isfinite(scene_features->at(j).descriptor[idx])) PCL_WARN("Feature point %d has NaN in component %d\n", (int)j, (int)idx);
+                        if(!pcl_isfinite(scene_features->at(j).descriptor[idx]))
+                        {
+                            PCL_WARN("Feature point %d has NaN in component %d\n", static_cast<int>(j), static_cast<int>(idx));
+                        }
                     }
                 }
 
@@ -623,7 +626,7 @@ void TestRunner::runDetector() {
                     for(size_t j = 0; j < candidate_features->points.size(); j++)
                     {
                         if(!pcl_isfinite(candidate_features->at(j).descriptor[0])) {
-                            PCL_WARN("Point %d is NaN\n", (int)j);
+                            PCL_WARN("Point %d is NaN\n", static_cast<int>(j));
                             nan_points->indices.push_back(j);
                         }
                     }
@@ -650,7 +653,7 @@ void TestRunner::runDetector() {
                     PointInTPtr keypoints (new pcl::PointCloud<PointInT>);
                     pcl::io::loadPCDFile(keypoints_cloud_path, *keypoints);
 
-                    PCL_INFO("Candidate keypoints: %d\n", (int)keypoints->points.size());
+                    PCL_INFO("Candidate keypoints: %d\n", static_cast<int>(keypoints->points.size()));
 
                     // Remove keypoints corresponding to NaN feature points
                     if(nan_points->indices.size() > 0)
@@ -673,7 +676,7 @@ void TestRunner::runDetector() {
 
                 for(size_t i = 0; i < alignment_results.size(); i++)
                 {
-                    printf ("Fitness score for model %d: %f\n", (int)i, alignment_results[i].fitness_score);
+                    printf ("Fitness score for model %d: %f\n", static_cast<int>(i), alignment_results[i].fitness_score);
                 }
 
                 for(size_t i = 0; i < best_matches.size(); i++)
@@ -736,7 +739,7 @@ void TestRunner::runDetector() {
                     for(size_t j = 0; j < candidate_features->points.size(); j++)
                     {
                         if(!pcl_isfinite(candidate_features->at(j).histogram[0])) {
-                            PCL_WARN("Point %d is NaN\n", (int)j);
+                            PCL_WARN("Point %d is NaN\n", static_cast<int>(j));
                             nan_points->indices.push_back(j);
                         }
                     }
@@ -763,7 +766,7 @@ void TestRunner::runDetector() {
                     PointInTPtr keypoints (new pcl::PointCloud<PointInT>);
                     pcl::io::loadPCDFile(keypoints_cloud_path, *keypoints);
 
-                    PCL_INFO("Candidate keypoints: %d\n", (int)keypoints->points.size());
+                    PCL_INFO("Candidate keypoints: %d\n", static_cast<int>(keypoints->points.size()));
 
                     // Remove keypoints corresponding to NaN feature points
                     if(nan_points->indices.size() > 0)
@@ -786,7 +789,7 @@ void TestRunner::runDetector() {
 
                 for(size_t i = 0; i < alignment_results.size(); i++)
                 {
-                    printf ("Fitness score for model %d: %f\n", (int)i, alignment_results[i].fitness_score);
+                    printf ("Fitness score for model %d: %f\n", static_cast<int>(i), alignment_results[i].fitness_score);
                 }
 
                 for(size_t i = 0; i < best_matches.size(); i++)
@@ -850,7 +853,7 @@ void TestRunner::runDetector() {
                     for(size_t j = 0; j < candidate_features->points.size(); j++)
                     {
                         if(!pcl_isfinite(candidate_features->at(j).descriptor[0])) {
-                            PCL_WARN("Point %d is NaN\n", (int)j);
+                            PCL_WARN("Point %d is NaN\n", static_cast<int>(j));
                             nan_points->indices.push_back(j);
                         }
                     }
@@ -877,7 +880,7 @@ void TestRunner::runDetector() {
                     PointInTPtr keypoints (new pcl::PointCloud<PointInT>);
                     pcl::io::loadPCDFile(keypoints_cloud_path, *keypoints);
 
-                    PCL_INFO("Candidate keypoints: %d\n", (int)keypoints->points.size());
+                    PCL_INFO("Candidate keypoints: %d\n", static_cast<int>(keypoints->points.size()));
 
                     // Remove keypoints corresponding to NaN feature points
                     if(nan_points->indices.size() > 0)
@@ -889,7 +892,7 @@ void TestRunner::runDetector() {
                         extract.filter(*keypoints);
                     }
 
-                    PCL_INFO("Candidate keypoints after removal NaNs: %d\n", (int)keypoints->points.size());
+                    PCL_INFO("Candidate keypoints after removal NaNs: %d\n", static_cast<int>(keypoints->points.size()));
 
                     candidate_feature_cloud.setInputCloud(keypoints);
                     alignment.addTemplateCloud( candidate_feature_cloud );
@@ -901,7 +904,7 @@ void TestRunner::runDetector() {
 
                 for(size_t i = 0; i < alignment_results.size(); i++)
                 {
-                    printf ("Fitness score for model %d: %f\n", (int)i, alignment_results[i].fitness_score);
+                    printf ("Fitness score for model %d: %f\n", static_cast<int>(i), alignment_results[i].fitness_score);
                 }
 
                 for(size_t i = 0; i < best_matches.size(); i++)

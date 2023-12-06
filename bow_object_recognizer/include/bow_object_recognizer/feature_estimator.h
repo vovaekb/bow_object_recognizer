@@ -135,7 +135,7 @@ public:
         shot_estimate.setNumberOfThreads(8);
         shot_estimate.compute(*shots);
 
-        PCL_INFO("SHOT descriptors has %d points\n\n", (int)shots->points.size());
+        PCL_INFO("SHOT descriptors has %d points\n\n", static_cast<int>(shots->points.size()));
 
 
         features.reserve(shots->size());
@@ -158,7 +158,7 @@ public:
             features.push_back(std::move(descriptor_vector));
         }
 
-        PCL_INFO("SHOT descriptors has %d points after NaN removal\n\n", (int)features.size());
+        PCL_INFO("SHOT descriptors has %d points after NaN removal\n\n", static_cast<int>(features.size()));
 
         std::cout << "[calculateFeatures] NaNs in scene keypoints: " << nan_indices_->indices.size() << "\n";
 
@@ -199,7 +199,7 @@ public:
             feature_point descriptor_vector (dimensionality);
 
             if(!pcl::isFinite<FeatureT>(features_cloud->points[j]))
-                PCL_WARN("Point %d is NaN\n", (int)j);
+                PCL_WARN("Point %d is NaN\n", static_cast<int>(j));
 
             for(int idx = 0; idx < dimensionality; idx++)
             {
@@ -247,7 +247,7 @@ public:
         for(size_t i = 0; i < in->points.size(); i++)
         {
             if(!pcl::isFinite<PointInT>(in->points[i]))
-                PCL_WARN("Point %d is NaN\n", (int)i);
+                PCL_WARN("Point %d is NaN\n", static_cast<int>(i));
         }
 
         FeatureTPtr fpfhs (new pcl::PointCloud<FeatureT> ());
@@ -319,7 +319,7 @@ public:
             feature_point descriptor_vector (dimensionality);
 
             if(!pcl::isFinite<FeatureT>(features_cloud->points[j]))
-                PCL_WARN("Point %d is NaN\n", (int)j);
+                PCL_WARN("Point %d is NaN\n", static_cast<int>(j));
 
             for(int idx = 0; idx < dimensionality; idx++)
             {
@@ -431,7 +431,7 @@ public:
             feature_point descriptor_vector (dimensionality);
 
             if(!pcl::isFinite<FeatureT>(features_cloud->points[j]))
-                PCL_WARN("Point %d is NaN\n", (int)j);
+                PCL_WARN("Point %d is NaN\n", static_cast<int>(j));
 
             for(int idx = 0; idx < dimensionality; idx++)
             {
@@ -535,7 +535,7 @@ public:
             feature_point descriptor_vector (dimensionality);
 
             if(!pcl::isFinite<FeatureT>(features_cloud->points[j]))
-                PCL_WARN("Point %d is NaN\n", (int)j);
+                PCL_WARN("Point %d is NaN\n", static_cast<int>(j));
 
             for(int idx = 0; idx < dimensionality; idx++)
             {

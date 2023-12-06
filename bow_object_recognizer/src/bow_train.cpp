@@ -167,7 +167,6 @@ void trainBowDescriptors(BoWModelDescriptorExtractor::Ptr& bow_extractor, std::v
     }
     threads.clear();
 
-
     // Calculate the number of models containing the word
     std::vector<float> word_occurrences;
     word_occurrences.resize(vocabulary.size(), 0);
@@ -185,7 +184,7 @@ void trainBowDescriptors(BoWModelDescriptorExtractor::Ptr& bow_extractor, std::v
 
     for(auto & word_occurrence : word_occurrences)
     {
-        printf("%d ", (int)word_occurrence);
+        printf("%d ", static_cast<int>(word_occurrence));
     }
 
     std::cout << "\n";

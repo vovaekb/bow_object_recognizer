@@ -106,7 +106,7 @@ void Source::getModelsInDir(boost::filesystem::path &models_path)
     }
 
     if(!use_model_views_)
-        model_samples_number_ = (int)models_.size();
+        model_samples_number_ = static_cast<int>(models_.size());
 }
 
 void Source::getScenesInDir(boost::filesystem::path &scenes_path)
