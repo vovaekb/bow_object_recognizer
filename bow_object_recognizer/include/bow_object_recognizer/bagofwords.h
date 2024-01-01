@@ -14,6 +14,7 @@
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
 #include <flann/flann.h>
+#include <boost/smart_ptr/make_unique.hpp>
 #include "source.h"
 
 typedef std::vector<float> feature_point;
@@ -88,7 +89,7 @@ public:
     void loadIndex(int &data_length);
 
 protected:
-    flann::Index<DistT> *index_;
+    boost::unique_ptr<flann::Index<DistT>> index_;
     flann::Matrix<float> data;
     std::vector<feature_point> train_descriptors_;
     int added_desc_count_;
