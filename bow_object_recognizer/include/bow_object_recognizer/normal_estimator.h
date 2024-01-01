@@ -13,7 +13,7 @@
 
 using namespace std;
 
-template<typename PointInT>
+template <typename PointInT>
 class NormalEstimator
 {
     typedef typename pcl::PointCloud<PointInT>::Ptr PointInTPtr;
@@ -28,9 +28,9 @@ public:
     int norm_est_k_;
     float norm_rad_;
 
-    NormalEstimator () {}
+    NormalEstimator() {}
 
-    inline void setDoScaling (float do_scaling)
+    inline void setDoScaling(float do_scaling)
     {
         do_scaling_ = do_scaling;
     }
@@ -55,23 +55,23 @@ public:
         norm_rad_ = rad;
     }
 
-    void estimate (
-        PointInTPtr &in, 
-        PointInTPtr &out, 
-        pcl::PointCloud<pcl::Normal>::Ptr &normals)
+    void estimate(
+        PointInTPtr &in,
+        PointInTPtr &out,
+        pcl::PointCloud<pcl::Normal>::Ptr &normals) noexcept
     {
-        if(do_scaling_)
+        if (do_scaling_)
         {
             Eigen::Matrix4f cloud_transform = Eigen::Matrix4f::Identity();
 
-            cloud_transform(0,0) = 0.001;
-            cloud_transform(1,1) = 0.001;
-            cloud_transform(2,2) = 0.001;
+            cloud_transform(0, 0) = 0.001;
+            cloud_transform(1, 1) = 0.001;
+            cloud_transform(2, 2) = 0.001;
 
             pcl::transformPointCloud(*in, *in, cloud_transform);
         }
 
-        if(do_voxelizing_)
+        if (do_voxelizing_)
         {
             // Voxelize cloud
             float grid_size = grid_resolution_; // 0.0025 - value used in the 3d_rec_framework
@@ -79,7 +79,7 @@ public:
             voxel_grid.setInputCloud(in);
             voxel_grid.setLeafSize(grid_size, grid_size, grid_size);
 
-            PointInTPtr temp_cloud (new pcl::PointCloud<PointInT> ());
+            PointInTPtr temp_cloud(new pcl::PointCloud<PointInT>());
             voxel_grid.filter(*temp_cloud);
 
             in = temp_cloud;
@@ -101,17 +101,17 @@ public:
 
         normals->is_dense = false;
 
-        for(size_t i = 0; i < normals->points.size(); i++)
+        for (size_t i = 0; i < normals->points.size(); i++)
         {
-            if(!pcl::isFinite<pcl::Normal>(normals->points[i]))
+            if (!pcl::isFinite<pcl::Normal>(normals->points[i]))
                 PCL_WARN("Normal %d is NaN\n", static_cast<int>(i));
         }
 
         mapping.clear();
         pcl::removeNaNNormalsFromPointCloud(*normals, *normals, mapping);
-        if(mapping.size() > 0)
+        if (mapping.size() > 0)
         {
-            PointInTPtr cloud_tmp (new pcl::PointCloud<PointInT> ());
+            PointInTPtr cloud_tmp(new pcl::PointCloud<PointInT>());
             pcl::copyPointCloud(*out, *cloud_tmp);
             pcl::copyPointCloud(*cloud_tmp, mapping, *out);
         }

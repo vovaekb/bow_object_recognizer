@@ -13,7 +13,7 @@
 #include <pcl/keypoints/narf_keypoint.h>
 #include <pcl/keypoints/harris_3d.h>
 #include <pcl/kdtree/kdtree_flann.h>
-//#include "common.h"
+// #include "common.h"
 
 class KeypointDetector
 {
@@ -24,8 +24,8 @@ public:
     KeypointDetector() {}
 
     virtual void detectKeypoints(
-        const pcl::PointCloud<PointInT>::Ptr &src, 
-        const pcl::PointCloud<PointInT>::Ptr &keypoints)=0;
+        const pcl::PointCloud<PointInT>::Ptr &src,
+        const pcl::PointCloud<PointInT>::Ptr &keypoints) = 0;
 
     inline void saveKeypoints(pcl::PointCloud<PointInT>::Ptr &keypoints, std::string path)
     {
@@ -60,7 +60,7 @@ public:
         radius_ = radius;
     }
 
-    double computeCloudResolution(const PointInTConstPtr& cloud)
+    double computeCloudResolution(const PointInTConstPtr &cloud) noexcept
     {
         std::cout << "Compute cloud resolution ...\n";
 
@@ -74,7 +74,7 @@ public:
 
         for (size_t i = 0; i < cloud->size(); ++i)
         {
-            if (! pcl_isfinite((*cloud)[i].x))
+            if (!pcl_isfinite((*cloud)[i].x))
                 continue;
 
             // Considering the second neighbor since the first is the point itself.
@@ -92,8 +92,8 @@ public:
     }
 
     void detectKeypoints(
-        const pcl::PointCloud<PointInT>::Ptr &src, 
-        const pcl::PointCloud<PointInT>::Ptr &keypoints)
+        const pcl::PointCloud<PointInT>::Ptr &src,
+        const pcl::PointCloud<PointInT>::Ptr &keypoints) noexcept
     {
         std::cout << "---- Perform Uniform Sampling -----\n";
 
@@ -102,11 +102,11 @@ public:
         std::cout << "Cloud resolution: " << resolution << "\n";
 
         pcl::UniformSampling<PointInT> uniform_sampling;
-        uniform_sampling.setInputCloud (src);
-        uniform_sampling.setRadiusSearch (radius_);
+        uniform_sampling.setInputCloud(src);
+        uniform_sampling.setRadiusSearch(radius_);
 
         pcl::PointCloud<int> keypoint_idxes;
-        uniform_sampling.compute (keypoint_idxes);
+        uniform_sampling.compute(keypoint_idxes);
 
         pcl::copyPointCloud(*src, keypoint_idxes.points, *keypoints);
 
@@ -114,7 +114,8 @@ public:
     }
 
     ~UniformKeypointDetector()
-    {}
+    {
+    }
 
 private:
     float radius_;
@@ -131,7 +132,8 @@ public:
     typedef boost::shared_ptr<ISSKeypointDetector> Ptr;
 
     ISSKeypointDetector()
-    {}
+    {
+    }
 
     inline void setSalientRadiusFactor(int salient_rad_factor)
     {
@@ -143,7 +145,7 @@ public:
         non_max_rad_factor_ = non_max_rad_factor;
     }
 
-    double computeCloudResolution(const PointInTConstPtr& cloud)
+    double computeCloudResolution(const PointInTConstPtr &cloud) noexcept
     {
         std::cout << "Compute cloud resolution ...\n";
 
@@ -157,7 +159,7 @@ public:
 
         for (size_t i = 0; i < cloud->size(); ++i)
         {
-            if (! pcl_isfinite((*cloud)[i].x))
+            if (!pcl_isfinite((*cloud)[i].x))
                 continue;
 
             // Considering the second neighbor since the first is the point itself.
@@ -175,8 +177,8 @@ public:
     }
 
     void detectKeypoints(
-        const pcl::PointCloud<PointInT>::Ptr &src, 
-        const pcl::PointCloud<PointInT>::Ptr &keypoints)
+        const pcl::PointCloud<PointInT>::Ptr &src,
+        const pcl::PointCloud<PointInT>::Ptr &keypoints) noexcept
     {
         // We assume that the keypoint detection is ISS
         std::cout << "---- Perform ISS ----\n";
@@ -184,7 +186,7 @@ public:
         typedef typename pcl::ISSKeypoint3D<PointInT, PointInT> KeypointDetector_;
         KeypointDetector_ detector;
         detector.setInputCloud(src);
-        typename pcl::search::KdTree<PointInT>::Ptr kdtree (new pcl::search::KdTree<PointInT> ());
+        typename pcl::search::KdTree<PointInT>::Ptr kdtree(new pcl::search::KdTree<PointInT>());
         detector.setSearchMethod(kdtree);
 
         double resolution = computeCloudResolution(src);
@@ -209,7 +211,8 @@ public:
     }
 
     ~ISSKeypointDetector()
-    {}
+    {
+    }
 };
 
 class SIFTKeypointDetector : public KeypointDetector
@@ -226,7 +229,8 @@ public:
     typedef boost::shared_ptr<SIFTKeypointDetector> Ptr;
 
     SIFTKeypointDetector()
-    {}
+    {
+    }
 
     void setScales(float min_scale, int nr_octaves, int nr_scales)
     {
@@ -246,19 +250,19 @@ public:
     }
 
     void detectKeypoints(
-        const pcl::PointCloud<PointInT>::Ptr &src, 
-        const pcl::PointCloud<PointInT>::Ptr &keypoints)
+        const pcl::PointCloud<PointInT>::Ptr &src,
+        const pcl::PointCloud<PointInT>::Ptr &keypoints) noexcept
     {
-        pcl::PointCloud<pcl::PointWithScale>::Ptr keypoints_tmp (new pcl::PointCloud<pcl::PointWithScale>);
+        pcl::PointCloud<pcl::PointWithScale>::Ptr keypoints_tmp(new pcl::PointCloud<pcl::PointWithScale>);
 
-        pcl::search::KdTree<PointInT>::Ptr tree (new pcl::search::KdTree<PointInT>);
+        pcl::search::KdTree<PointInT>::Ptr tree(new pcl::search::KdTree<PointInT>);
         pcl::SIFTKeypoint<PointInT, pcl::PointWithScale> detector;
         detector.setInputCloud(src);
-        detector.setSearchSurface (src);
-        detector.setSearchMethod (tree);
+        detector.setSearchSurface(src);
+        detector.setSearchMethod(tree);
         detector.setScales(min_scale_, nr_octaves_, nr_scales_);
         detector.setMinimumContrast(min_contrast_);
-        detector.compute (*keypoints_tmp);
+        detector.compute(*keypoints_tmp);
 
         pcl::copyPointCloud(*keypoints_tmp, *keypoints);
 
@@ -266,7 +270,8 @@ public:
     }
 
     ~SIFTKeypointDetector()
-    {}
+    {
+    }
 };
 
 class NARFKeypointDetector : public KeypointDetector
@@ -280,7 +285,8 @@ public:
     typedef boost::shared_ptr<NARFKeypointDetector> Ptr;
 
     NARFKeypointDetector()
-    {}
+    {
+    }
 
     void setRadius(float radius)
     {
@@ -293,34 +299,35 @@ public:
     }
 
     void detectKeypoints(
-        const pcl::PointCloud<PointInT>::Ptr &src, 
-        const pcl::PointCloud<PointInT>::Ptr &keypoints)
+        const pcl::PointCloud<PointInT>::Ptr &src,
+        const pcl::PointCloud<PointInT>::Ptr &keypoints) noexcept
     {
         std::cout << "\n--------- Perform NARF -----------\n";
 
-        Eigen::Affine3f scene_sensor_pose = Eigen::Affine3f(Eigen::Translation3f(src->sensor_origin_[0], src->sensor_origin_[1], src->sensor_origin_[2]))*Eigen::Affine3f (src->sensor_orientation_);
+        Eigen::Affine3f scene_sensor_pose = Eigen::Affine3f(Eigen::Translation3f(src->sensor_origin_[0], src->sensor_origin_[1], src->sensor_origin_[2])) * Eigen::Affine3f(src->sensor_orientation_);
 
-        boost::shared_ptr<pcl::RangeImage> range_image_ptr (new pcl::RangeImage);
-        pcl::RangeImage& range_image = *range_image_ptr;
-        range_image.createFromPointCloud (*src, pcl::deg2rad (0.5f), pcl::deg2rad (360.0f), pcl::deg2rad (180.0f), scene_sensor_pose, pcl::RangeImage::CAMERA_FRAME, 0.0, 0.0f, 1);
+        boost::shared_ptr<pcl::RangeImage> range_image_ptr(new pcl::RangeImage);
+        pcl::RangeImage &range_image = *range_image_ptr;
+        range_image.createFromPointCloud(*src, pcl::deg2rad(0.5f), pcl::deg2rad(360.0f), pcl::deg2rad(180.0f), scene_sensor_pose, pcl::RangeImage::CAMERA_FRAME, 0.0, 0.0f, 1);
 
         range_image.setUnseenToMaxRange();
 
         pcl::RangeImageBorderExtractor range_image_border_extractor;
         pcl::NarfKeypoint detector;
-        detector.setRangeImageBorderExtractor (&range_image_border_extractor);
-        detector.setRangeImage (&range_image);
+        detector.setRangeImageBorderExtractor(&range_image_border_extractor);
+        detector.setRangeImage(&range_image);
         detector.getParameters().support_size = support_size_; // 0.2f;
         detector.setRadiusSearch(radius_);
 
         pcl::PointCloud<int> keypoint_idxes;
-        detector.compute (keypoint_idxes);
+        detector.compute(keypoint_idxes);
 
         pcl::copyPointCloud(*src, keypoint_idxes.points, *keypoints);
     }
 
     ~NARFKeypointDetector()
-    {}
+    {
+    }
 };
 
 class Harris3DKeypointDetector : public KeypointDetector
@@ -346,19 +353,19 @@ public:
     }
 
     void detectKeypoints(
-        const pcl::PointCloud<PointInT>::Ptr &src, 
-        const pcl::PointCloud<PointInT>::Ptr &keypoints)
+        const pcl::PointCloud<PointInT>::Ptr &src,
+        const pcl::PointCloud<PointInT>::Ptr &keypoints) noexcept
     {
         std::cout << "-------- Perform Harris3D -------\n";
 
         pcl::PointCloud<pcl::PointXYZI> keypoints_tmp;
 
         pcl::HarrisKeypoint3D<PointInT, pcl::PointXYZI> detector;
-        detector.setNonMaxSupression (true);
-        detector.setInputCloud (src);
-        detector.setThreshold (threshold_);
+        detector.setNonMaxSupression(true);
+        detector.setInputCloud(src);
+        detector.setThreshold(threshold_);
         detector.setRadius(radius_); // 0.005
-        detector.compute (keypoints_tmp);
+        detector.compute(keypoints_tmp);
 
         pcl::copyPointCloud(keypoints_tmp, *keypoints);
 

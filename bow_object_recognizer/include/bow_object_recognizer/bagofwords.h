@@ -36,7 +36,7 @@ public:
     typedef pcl::PointXYZRGB PointInT;
     typedef boost::shared_ptr<BoWTrainer> Ptr;
 
-    explicit BoWTrainer(int cluster_count);
+    explicit BoWTrainer(int cluster_count) noexcept;
 
     // Add descriptor to the training set of descriptors
     void add(feature_point descriptor);
@@ -46,7 +46,7 @@ public:
     void setCentersInitFlag(std::string centers_init_flag);
 
     // Actual performing of k-means
-    std::vector<feature_point> cluster();
+    std::vector<feature_point> cluster() noexcept;
 
     std::vector<feature_point> getDescriptors();
 

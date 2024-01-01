@@ -14,7 +14,6 @@
 #include <pcl/features/shot.h>
 #include <pcl/kdtree/kdtree_flann.h>
 
-
 template <typename PointInT>
 class FeatureEstimator
 {
@@ -27,21 +26,20 @@ protected:
     float support_radius_;
     pcl::PointIndices::Ptr nan_indices_;
 
-
 public:
-    typedef boost::shared_ptr<FeatureEstimator<PointInT> > Ptr;
+    typedef boost::shared_ptr<FeatureEstimator<PointInT>> Ptr;
 
-    FeatureEstimator() {  }
+    FeatureEstimator() {}
 
     virtual void calculateFeatures(
-        PointInTPtr& in, 
-        PointInTPtr& keypoints, 
-        NormalTPtr& normals, 
-        std::vector<feature_point>& features) = 0;
+        PointInTPtr &in,
+        PointInTPtr &keypoints,
+        NormalTPtr &normals,
+        std::vector<feature_point> &features) = 0;
 
-    virtual void saveFeatures(std::vector<feature_point>& features, std::string path) = 0;
+    virtual void saveFeatures(std::vector<feature_point> &features, std::string path) = 0;
 
-    virtual void loadFeatures(std::string path, std::vector<feature_point>& features) = 0;
+    virtual void loadFeatures(std::string path, std::vector<feature_point> &features) = 0;
 
     ~FeatureEstimator() {}
 
@@ -77,7 +75,7 @@ protected:
     typedef std::vector<float> feature_point;
 
 public:
-    typedef boost::shared_ptr<FeatureEstimatorSHOT<PointInT> > Ptr;
+    typedef boost::shared_ptr<FeatureEstimatorSHOT<PointInT>> Ptr;
 
     FeatureEstimatorSHOT()
     {
@@ -85,7 +83,7 @@ public:
         nan_indices_ = pcl::PointIndices::Ptr(new pcl::PointIndices);
     }
 
-    double computeCloudResolution(const PointInTConstPtr& cloud)
+    double computeCloudResolution(const PointInTConstPtr &cloud)
     {
         double resolution = 0.0;
         int number_of_points = 0;
@@ -97,7 +95,7 @@ public:
 
         for (size_t i = 0; i < cloud->size(); ++i)
         {
-            if (! pcl_isfinite((*cloud)[i].x))
+            if (!pcl_isfinite((*cloud)[i].x))
                 continue;
 
             // Considering the second neighbor since the first is the point itself.
@@ -115,14 +113,14 @@ public:
     }
 
     void calculateFeatures(
-        PointInTPtr& in, 
-        PointInTPtr& keypoints, 
-        NormalTPtr& normals, 
-        std::vector<feature_point>& features)
+        PointInTPtr &in,
+        PointInTPtr &keypoints,
+        NormalTPtr &normals,
+        std::vector<feature_point> &features) noexcept
     {
         std::cout << "Calculate features SHOT ...\n";
 
-        FeatureTPtr shots (new pcl::PointCloud<FeatureT> ());
+        FeatureTPtr shots(new pcl::PointCloud<FeatureT>());
 
         double resolution = computeCloudResolution(in);
 
@@ -137,20 +135,20 @@ public:
 
         PCL_INFO("SHOT descriptors has %d points\n\n", static_cast<int>(shots->points.size()));
 
-
         features.reserve(shots->size());
 
         // Preprocess features: remove NaNs
-        for(size_t j = 0; j < shots->points.size(); j++)
+        for (size_t j = 0; j < shots->points.size(); j++)
         {
-            feature_point descriptor_vector (dimensionality);
+            feature_point descriptor_vector(dimensionality);
 
-            if(!pcl_isfinite(shots->at(j).descriptor[0])) {
+            if (!pcl_isfinite(shots->at(j).descriptor[0]))
+            {
                 nan_indices_->indices.push_back(j);
                 continue;
             }
 
-            for(int idx = 0; idx < dimensionality; idx++)
+            for (int idx = 0; idx < dimensionality; idx++)
             {
                 descriptor_vector[idx] = shots->points[j].descriptor[idx];
             }
@@ -161,31 +159,30 @@ public:
         PCL_INFO("SHOT descriptors has %d points after NaN removal\n\n", static_cast<int>(features.size()));
 
         std::cout << "[calculateFeatures] NaNs in scene keypoints: " << nan_indices_->indices.size() << "\n";
-
     }
 
-    void saveFeatures(std::vector<feature_point>& features, std::string path)
+    void saveFeatures(std::vector<feature_point> &features, std::string path)
     {
-        FeatureTPtr features_cloud (new pcl::PointCloud<FeatureT>);
+        FeatureTPtr features_cloud(new pcl::PointCloud<FeatureT>);
         features_cloud->resize(features.size());
 
         size_t j = 0;
-        std::for_each(features.begin(), features.end(), [&j, &features_cloud, &dimensionality](feature_point & feature){
+        std::for_each(features.begin(), features.end(), [&j, &features_cloud, &dimensionality](feature_point &feature)
+                      {
             for(int idx = 0; idx < dimensionality; idx++)
             {
                 features_cloud->points[j].descriptor[idx] = feature[idx];
             }
-            j++;
-        });
+            j++; });
 
         pcl::io::savePCDFileASCII(path.c_str(), *features_cloud);
 
         std::cout << "Features were saved to file: " << path << "\n";
     }
 
-    void loadFeatures(std::string path, std::vector<feature_point>& features)
+    void loadFeatures(std::string path, std::vector<feature_point> &features) noexcept
     {
-        FeatureTPtr features_cloud (new pcl::PointCloud<FeatureT>);
+        FeatureTPtr features_cloud(new pcl::PointCloud<FeatureT>);
 
         // Load descriptors from the file
         pcl::io::loadPCDFile(path.c_str(), *features_cloud);
@@ -194,14 +191,14 @@ public:
 
         features.reserve(features_cloud->size());
 
-        for(size_t j = 0; j < features_cloud->points.size(); j++)
+        for (size_t j = 0; j < features_cloud->points.size(); j++)
         {
-            feature_point descriptor_vector (dimensionality);
+            feature_point descriptor_vector(dimensionality);
 
-            if(!pcl::isFinite<FeatureT>(features_cloud->points[j]))
+            if (!pcl::isFinite<FeatureT>(features_cloud->points[j]))
                 PCL_WARN("Point %d is NaN\n", static_cast<int>(j));
 
-            for(int idx = 0; idx < dimensionality; idx++)
+            for (int idx = 0; idx < dimensionality; idx++)
             {
                 descriptor_vector[idx] = features_cloud->points[j].descriptor[idx];
             }
@@ -229,28 +226,29 @@ protected:
     typedef std::vector<float> feature_point;
 
 public:
-    typedef boost::shared_ptr<FeatureEstimatorFPFH<PointInT> > Ptr;
+    typedef boost::shared_ptr<FeatureEstimatorFPFH<PointInT>> Ptr;
 
-    FeatureEstimatorFPFH() {
+    FeatureEstimatorFPFH()
+    {
         dimensionality = 33;
         nan_indices_ = pcl::PointIndices::Ptr(new pcl::PointIndices);
     }
 
     void calculateFeatures(
-        PointInTPtr& in, 
-        PointInTPtr& keypoints, 
-        NormalTPtr& normals, 
-        std::vector<feature_point>& features)
+        PointInTPtr &in,
+        PointInTPtr &keypoints,
+        NormalTPtr &normals,
+        std::vector<feature_point> &features) noexcept
     {
         std::cout << "Calculate features FPFH ...\n";
 
-        for(size_t i = 0; i < in->points.size(); i++)
+        for (size_t i = 0; i < in->points.size(); i++)
         {
-            if(!pcl::isFinite<PointInT>(in->points[i]))
+            if (!pcl::isFinite<PointInT>(in->points[i]))
                 PCL_WARN("Point %d is NaN\n", static_cast<int>(i));
         }
 
-        FeatureTPtr fpfhs (new pcl::PointCloud<FeatureT> ());
+        FeatureTPtr fpfhs(new pcl::PointCloud<FeatureT>());
 
         pcl::FPFHEstimationOMP<PointInT, NormalT, FeatureT> fpfh_estimate;
         fpfh_estimate.setInputCloud(keypoints);
@@ -261,7 +259,7 @@ public:
         typename pcl::search::KdTree<PointInT>::Ptr tree(new pcl::search::KdTree<PointInT>());
         fpfh_estimate.setSearchMethod(tree);
         // It was uncommented
-//        fpfh_estimate.setKSearch(50);
+        //        fpfh_estimate.setKSearch(50);
         // end -- from Semantic localization project
         fpfh_estimate.setInputNormals(normals);
         fpfh_estimate.setSearchSurface(in);
@@ -270,42 +268,41 @@ public:
 
         features.reserve(fpfhs->size());
 
-        for(size_t j = 0; j < fpfhs->points.size(); j++)
+        for (size_t j = 0; j < fpfhs->points.size(); j++)
         {
-            feature_point descriptor_vector (dimensionality);
+            feature_point descriptor_vector(dimensionality);
 
-            for(int idx = 0; idx < dimensionality; idx++)
+            for (int idx = 0; idx < dimensionality; idx++)
             {
                 descriptor_vector[idx] = fpfhs->points[j].histogram[idx];
             }
 
             features.push_back(std::move(descriptor_vector));
         }
-
     }
 
-    void saveFeatures(std::vector<feature_point>& features, std::string path)
+    void saveFeatures(std::vector<feature_point> &features, std::string path)
     {
-        FeatureTPtr features_cloud (new pcl::PointCloud<FeatureT>);
+        FeatureTPtr features_cloud(new pcl::PointCloud<FeatureT>);
         features_cloud->resize(features.size());
 
         size_t j = 0;
-        std::for_each(features.begin(), features.end(), [&j, &features_cloud, &dimensionality](feature_point & feature){
+        std::for_each(features.begin(), features.end(), [&j, &features_cloud, &dimensionality](feature_point &feature)
+                      {
             for(int idx = 0; idx < dimensionality; idx++)
             {
                 features_cloud->points[j].descriptor[idx] = feature[idx];
             }
-            j++;
-        });
+            j++; });
 
         pcl::io::savePCDFileASCII(path.c_str(), *features_cloud);
 
         std::cout << "Features were saved to file: " << path << "\n";
     }
 
-    void loadFeatures(std::string path, std::vector<feature_point>& features)
+    void loadFeatures(std::string path, std::vector<feature_point> &features)
     {
-        FeatureTPtr features_cloud (new pcl::PointCloud<FeatureT>);
+        FeatureTPtr features_cloud(new pcl::PointCloud<FeatureT>);
 
         // Load descriptors from the file
         pcl::io::loadPCDFile(path.c_str(), *features_cloud);
@@ -314,14 +311,14 @@ public:
 
         features.reserve(features_cloud->size());
 
-        for(size_t j = 0; j < features_cloud->points.size(); j++)
+        for (size_t j = 0; j < features_cloud->points.size(); j++)
         {
-            feature_point descriptor_vector (dimensionality);
+            feature_point descriptor_vector(dimensionality);
 
-            if(!pcl::isFinite<FeatureT>(features_cloud->points[j]))
+            if (!pcl::isFinite<FeatureT>(features_cloud->points[j]))
                 PCL_WARN("Point %d is NaN\n", static_cast<int>(j));
 
-            for(int idx = 0; idx < dimensionality; idx++)
+            for (int idx = 0; idx < dimensionality; idx++)
             {
                 descriptor_vector[idx] = features_cloud->points[j].histogram[idx];
             }
@@ -350,9 +347,10 @@ protected:
     typedef std::vector<float> feature_point;
 
 public:
-    typedef boost::shared_ptr<FeatureEstimatorPFHRGB<PointInT> > Ptr;
+    typedef boost::shared_ptr<FeatureEstimatorPFHRGB<PointInT>> Ptr;
 
-    FeatureEstimatorPFHRGB() {
+    FeatureEstimatorPFHRGB()
+    {
         dimensionality = 250;
         nan_indices_ = pcl::PointIndices::Ptr(new pcl::PointIndices);
     }
@@ -363,61 +361,60 @@ public:
     }
 
     void calculateFeatures(
-        PointInTPtr& in, 
-        PointInTPtr& keypoints, 
-        NormalTPtr& normals, 
-        std::vector<feature_point>& features)
+        PointInTPtr &in,
+        PointInTPtr &keypoints,
+        NormalTPtr &normals,
+        std::vector<feature_point> &features) noexcept
     {
-        FeatureTPtr pfhrgbs (new pcl::PointCloud<FeatureT> ());
+        FeatureTPtr pfhrgbs(new pcl::PointCloud<FeatureT>());
 
-        typename pcl::search::KdTree<PointInT>::Ptr tree (new pcl::search::KdTree<PointInT>);
+        typename pcl::search::KdTree<PointInT>::Ptr tree(new pcl::search::KdTree<PointInT>);
 
         pcl::PFHRGBEstimation<PointInT, NormalT, FeatureT> pfhrgb_estimation;
-        pfhrgb_estimation.setInputCloud (keypoints);
+        pfhrgb_estimation.setInputCloud(keypoints);
         pfhrgb_estimation.setInputNormals(normals);
         pfhrgb_estimation.setSearchSurface(in);
-        pfhrgb_estimation.setSearchMethod (tree);
-        pfhrgb_estimation.setRadiusSearch (support_radius_);
-        pfhrgb_estimation.compute (*pfhrgbs);
+        pfhrgb_estimation.setSearchMethod(tree);
+        pfhrgb_estimation.setRadiusSearch(support_radius_);
+        pfhrgb_estimation.compute(*pfhrgbs);
 
         features.reserve(pfhrgbs->size());
 
-        for(size_t j = 0; j < pfhrgbs->points.size(); j++)
+        for (size_t j = 0; j < pfhrgbs->points.size(); j++)
         {
-            feature_point descriptor_vector (dimensionality);
+            feature_point descriptor_vector(dimensionality);
 
-            for(int idx = 0; idx < dimensionality; idx++)
+            for (int idx = 0; idx < dimensionality; idx++)
             {
                 descriptor_vector[idx] = pfhrgbs->points[j].histogram[idx];
             }
 
             features.push_back(std::move(descriptor_vector));
         }
-
     }
 
-    void saveFeatures(std::vector<feature_point>& features, std::string path)
+    void saveFeatures(std::vector<feature_point> &features, std::string path)
     {
-        FeatureTPtr features_cloud (new pcl::PointCloud<FeatureT>);
+        FeatureTPtr features_cloud(new pcl::PointCloud<FeatureT>);
         features_cloud->resize(features.size());
 
         size_t j = 0;
-        std::for_each(features.begin(), features.end(), [&j, &features_cloud, &dimensionality](feature_point & feature){
+        std::for_each(features.begin(), features.end(), [&j, &features_cloud, &dimensionality](feature_point &feature)
+                      {
             for(int idx = 0; idx < dimensionality; idx++)
             {
                 features_cloud->points[j].descriptor[idx] = feature[idx];
             }
-            j++;
-        });
+            j++; });
 
         pcl::io::savePCDFileASCII(path.c_str(), *features_cloud);
 
         std::cout << "Features were saved to file: " << path << "\n";
     }
 
-    void loadFeatures(std::string path, std::vector<feature_point>& features)
+    void loadFeatures(std::string path, std::vector<feature_point> &features)
     {
-        FeatureTPtr features_cloud (new pcl::PointCloud<FeatureT>);
+        FeatureTPtr features_cloud(new pcl::PointCloud<FeatureT>);
 
         // Load descriptors from the file
         pcl::io::loadPCDFile(path.c_str(), *features_cloud);
@@ -426,14 +423,14 @@ public:
 
         features.reserve(features_cloud->size());
 
-        for(size_t j = 0; j < features_cloud->points.size(); j++)
+        for (size_t j = 0; j < features_cloud->points.size(); j++)
         {
-            feature_point descriptor_vector (dimensionality);
+            feature_point descriptor_vector(dimensionality);
 
-            if(!pcl::isFinite<FeatureT>(features_cloud->points[j]))
+            if (!pcl::isFinite<FeatureT>(features_cloud->points[j]))
                 PCL_WARN("Point %d is NaN\n", static_cast<int>(j));
 
-            for(int idx = 0; idx < dimensionality; idx++)
+            for (int idx = 0; idx < dimensionality; idx++)
             {
                 descriptor_vector[idx] = features_cloud->points[j].histogram[idx];
             }
@@ -461,37 +458,38 @@ protected:
     typedef std::vector<float> feature_point;
 
 public:
-    typedef boost::shared_ptr<FeatureEstimatorColorSHOT<PointInT> > Ptr;
+    typedef boost::shared_ptr<FeatureEstimatorColorSHOT<PointInT>> Ptr;
 
-    FeatureEstimatorColorSHOT() {
+    FeatureEstimatorColorSHOT()
+    {
         dimensionality = 1344;
         nan_indices_ = pcl::PointIndices::Ptr(new pcl::PointIndices);
     }
 
     void calculateFeatures(
-        PointInTPtr& in, 
-        PointInTPtr& keypoints, 
-        NormalTPtr& normals, 
-        std::vector<feature_point>& features)
+        PointInTPtr &in,
+        PointInTPtr &keypoints,
+        NormalTPtr &normals,
+        std::vector<feature_point> &features) noexcept
     {
-        FeatureTPtr cshots (new pcl::PointCloud<FeatureT> ());
+        FeatureTPtr cshots(new pcl::PointCloud<FeatureT>());
 
         pcl::SHOTColorEstimation<PointInT, NormalT> shotestimator;
         shotestimator.setInputCloud(keypoints);
         shotestimator.setInputNormals(normals);
-        //computes the pointcloud resolution
-        //sets the radius to three times the resolution
+        // computes the pointcloud resolution
+        // sets the radius to three times the resolution
         shotestimator.setRadiusSearch(support_radius_);
         shotestimator.setSearchSurface(in);
         shotestimator.compute(*cshots);
 
         features.reserve(cshots->size());
 
-        for(size_t j = 0; j < cshots->points.size(); j++)
+        for (size_t j = 0; j < cshots->points.size(); j++)
         {
-            feature_point descriptor_vector (dimensionality);
+            feature_point descriptor_vector(dimensionality);
 
-            for(int idx = 0; idx < dimensionality; idx++)
+            for (int idx = 0; idx < dimensionality; idx++)
             {
                 descriptor_vector[idx] = cshots->points[j].descriptor[idx];
             }
@@ -500,28 +498,28 @@ public:
         }
     }
 
-    void saveFeatures(std::vector<feature_point>& features, std::string path)
+    void saveFeatures(std::vector<feature_point> &features, std::string path)
     {
-        FeatureTPtr features_cloud (new pcl::PointCloud<FeatureT>);
+        FeatureTPtr features_cloud(new pcl::PointCloud<FeatureT>);
         features_cloud->resize(features.size());
 
         size_t j = 0;
-        std::for_each(features.begin(), features.end(), [&j, &features_cloud, &dimensionality](feature_point & feature){
+        std::for_each(features.begin(), features.end(), [&j, &features_cloud, &dimensionality](feature_point &feature)
+                      {
             for(int idx = 0; idx < dimensionality; idx++)
             {
                 features_cloud->points[j].descriptor[idx] = feature[idx];
             }
-            j++;
-        });
+            j++; });
 
         pcl::io::savePCDFileASCII(path.c_str(), *features_cloud);
 
         std::cout << "Features were saved to file: " << path << "\n";
     }
 
-    void loadFeatures(std::string path, std::vector<feature_point>& features)
+    void loadFeatures(std::string path, std::vector<feature_point> &features)
     {
-        FeatureTPtr features_cloud (new pcl::PointCloud<FeatureT>);
+        FeatureTPtr features_cloud(new pcl::PointCloud<FeatureT>);
 
         // Load descriptors from the file
         pcl::io::loadPCDFile(path.c_str(), *features_cloud);
@@ -530,14 +528,14 @@ public:
 
         features.reserve(features_cloud->size());
 
-        for(size_t j = 0; j < features_cloud->points.size(); j++)
+        for (size_t j = 0; j < features_cloud->points.size(); j++)
         {
-            feature_point descriptor_vector (dimensionality);
+            feature_point descriptor_vector(dimensionality);
 
-            if(!pcl::isFinite<FeatureT>(features_cloud->points[j]))
+            if (!pcl::isFinite<FeatureT>(features_cloud->points[j]))
                 PCL_WARN("Point %d is NaN\n", static_cast<int>(j));
 
-            for(int idx = 0; idx < dimensionality; idx++)
+            for (int idx = 0; idx < dimensionality; idx++)
             {
                 descriptor_vector[idx] = features_cloud->points[j].descriptor[idx];
             }
