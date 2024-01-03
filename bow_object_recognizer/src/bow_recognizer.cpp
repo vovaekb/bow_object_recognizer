@@ -340,7 +340,7 @@ void recognizeScene(PointCloudPtr &scene_cloud)
     {
         // rank matches
         std::sort(best_matches.begin(), best_matches.end(),
-                  [](const ModelScore &d1, const ModelScore &d2)
+                  [](const auto &d1, const auto &d2)
                   {
                       return d1.score > d2.score
                   });
@@ -426,7 +426,7 @@ void recognizeScene(PointCloudPtr &scene_cloud)
                 }
 
                 std::sort(best_matches.begin(), best_matches.end(),
-                          [](const ModelScore &d1, const ModelScore &d2)
+                          [](const auto &d1, const auto &d2)
                           {
                               return d1.sac_alignment_score < d2.sac_alignment_score
                           });
@@ -502,7 +502,7 @@ void recognizeScene(PointCloudPtr &scene_cloud)
                 }
 
                 std::sort(best_matches.begin(), best_matches.end(),
-                          [](const ModelScore &d1, const ModelScore &d2)
+                          [](const auto &d1, const auto &d2)
                           {
                               return d1.sac_alignment_score < d2.sac_alignment_score
                           });
@@ -578,7 +578,7 @@ void recognizeScene(PointCloudPtr &scene_cloud)
                 }
 
                 std::sort(best_matches.begin(), best_matches.end(),
-                          [](const ModelScore &d1, const ModelScore &d2)
+                          [](const auto &d1, const auto &d2)
                           {
                               return d1.sac_alignment_score < d2.sac_alignment_score
                           });
@@ -654,7 +654,7 @@ void recognizeScene(PointCloudPtr &scene_cloud)
                 }
 
                 std::sort(best_matches.begin(), best_matches.end(),
-                          [](const ModelScore &d1, const ModelScore &d2)
+                          [](const auto &d1, const auto &d2)
                           {
                               return d1.sac_alignment_score < d2.sac_alignment_score
                           });
