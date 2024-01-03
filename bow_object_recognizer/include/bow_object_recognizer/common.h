@@ -1,11 +1,9 @@
 #ifndef COMMON_H
 #define COMMON_H
 
+#include "typedefs.h"
 #include "keypoint_detector.h"
 #include "feature_estimator.h"
-
-typedef pcl::PointXYZRGB PointInT;
-typedef std::vector<float> bow_vector;
 
 extern std::string training_dataset;
 
@@ -41,6 +39,6 @@ extern bool limit_matches;
 extern BoWModelDescriptorExtractor::Ptr bow_extractor;
 extern Source::Ptr training_source;
 extern KeypointDetector::Ptr detector;
-extern FeatureEstimator<PointInT>::Ptr feature_estimator;
-extern std::map<std::string, bow_vector> training_bow_descriptors;
+extern FeatureEstimator<PointType>::Ptr feature_estimator;
+extern std::map<std::string, BoWDescriptor> training_bow_descriptors;
 #endif // COMMON_H

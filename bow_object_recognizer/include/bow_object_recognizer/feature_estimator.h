@@ -13,33 +13,29 @@
 #include <pcl/features/pfhrgb.h>
 #include <pcl/features/shot.h>
 #include <pcl/kdtree/kdtree_flann.h>
+#include "typedefs.h"
 
-template <typename PointInT>
+template <typename PointType>
 class FeatureEstimator
 {
 protected:
-    typedef pcl::Normal NormalT;
-    typedef typename pcl::PointCloud<PointInT>::Ptr PointInTPtr;
-    typedef pcl::PointCloud<NormalT>::Ptr NormalTPtr;
-    typedef std::vector<float> feature_point;
-
     float support_radius_;
     pcl::PointIndices::Ptr nan_indices_;
 
 public:
-    typedef boost::shared_ptr<FeatureEstimator<PointInT>> Ptr;
+    using Ptr = boost::shared_ptr<FeatureEstimator<PointType>>;
 
     FeatureEstimator() {}
 
     virtual void calculateFeatures(
-        PointInTPtr &in,
-        PointInTPtr &keypoints,
-        NormalTPtr &normals,
-        std::vector<feature_point> &features) = 0;
+        PointCloudPtr &in,
+        PointCloudPtr &keypoints,
+        SurfaceNormalsPtr &normals,
+        std::vector<BoWDescriptorPoint> &features) = 0;
 
-    virtual void saveFeatures(std::vector<feature_point> &features, std::string path) = 0;
+    virtual void saveFeatures(std::vector<BoWDescriptorPoint> &features, std::string path) = 0;
 
-    virtual void loadFeatures(std::string path, std::vector<feature_point> &features) = 0;
+    virtual void loadFeatures(std::string path, std::vector<BoWDescriptorPoint> &features) = 0;
 
     ~FeatureEstimator() {}
 
@@ -58,24 +54,20 @@ public:
     int dimensionality;
 };
 
-template <typename PointInT>
-class FeatureEstimatorSHOT : public FeatureEstimator<PointInT>
+template <typename PointType>
+class FeatureEstimatorSHOT : public FeatureEstimator<PointType>
 {
-    using FeatureEstimator<PointInT>::dimensionality;
-    using FeatureEstimator<PointInT>::support_radius_;
-    using FeatureEstimator<PointInT>::nan_indices_;
+    using FeatureEstimator<PointType>::dimensionality;
+    using FeatureEstimator<PointType>::support_radius_;
+    using FeatureEstimator<PointType>::nan_indices_;
 
 protected:
-    typedef pcl::Normal NormalT;
-    typedef pcl::SHOT352 FeatureT;
-    typedef typename pcl::PointCloud<PointInT>::Ptr PointInTPtr;
-    typedef typename pcl::PointCloud<PointInT>::ConstPtr PointInTConstPtr;
-    typedef pcl::PointCloud<FeatureT>::Ptr FeatureTPtr;
-    typedef pcl::PointCloud<NormalT>::Ptr NormalTPtr;
-    typedef std::vector<float> feature_point;
+    using DescriptorType = pcl::SHOT352;
+    using DescriptorCloudPtr = pcl::PointCloud<DescriptorType>::Ptr;
+    using DescriptorEstimator = FeatureEstimatorSHOT<PointType>;
 
 public:
-    typedef boost::shared_ptr<FeatureEstimatorSHOT<PointInT>> Ptr;
+    using Ptr = boost::shared_ptr<DescriptorEstimator>;
 
     FeatureEstimatorSHOT()
     {
@@ -83,14 +75,14 @@ public:
         nan_indices_ = pcl::PointIndices::Ptr(new pcl::PointIndices);
     }
 
-    double computeCloudResolution(const PointInTConstPtr &cloud)
+    double computeCloudResolution(const PointCloudConstPtr &cloud)
     {
         double resolution = 0.0;
         int number_of_points = 0;
         int nres;
         std::vector<int> indices(2);
         std::vector<float> squared_distances(2);
-        typename pcl::search::KdTree<PointInT> tree;
+        KdTree tree;
         tree.setInputCloud(cloud);
 
         for (size_t i = 0; i < cloud->size(); ++i)
@@ -113,18 +105,18 @@ public:
     }
 
     void calculateFeatures(
-        PointInTPtr &in,
-        PointInTPtr &keypoints,
-        NormalTPtr &normals,
-        std::vector<feature_point> &features) noexcept
+        PointCloudPtr &in,
+        PointCloudPtr &keypoints,
+        SurfaceNormalsPtr &normals,
+        std::vector<BoWDescriptorPoint> &features) noexcept
     {
         std::cout << "Calculate features SHOT ...\n";
 
-        FeatureTPtr shots(new pcl::PointCloud<FeatureT>());
+        DescriptorCloudPtr shots(new pcl::PointCloud<DescriptorType>());
 
         double resolution = computeCloudResolution(in);
 
-        pcl::SHOTEstimationOMP<PointInT, NormalT, FeatureT> shot_estimate;
+        pcl::SHOTEstimationOMP<PointType, NormalType, DescriptorType> shot_estimate;
         shot_estimate.setInputCloud(keypoints);
         shot_estimate.setRadiusSearch(support_radius_);
 
@@ -140,7 +132,7 @@ public:
         // Preprocess features: remove NaNs
         for (size_t j = 0; j < shots->points.size(); j++)
         {
-            feature_point descriptor_vector(dimensionality);
+            BoWDescriptorPoint descriptor_vector(dimensionality);
 
             if (!pcl_isfinite(shots->at(j).descriptor[0]))
             {
@@ -161,13 +153,13 @@ public:
         std::cout << "[calculateFeatures] NaNs in scene keypoints: " << nan_indices_->indices.size() << "\n";
     }
 
-    void saveFeatures(std::vector<feature_point> &features, std::string path)
+    void saveFeatures(std::vector<BoWDescriptorPoint> &features, std::string path)
     {
-        FeatureTPtr features_cloud(new pcl::PointCloud<FeatureT>);
+        DescriptorCloudPtr features_cloud(new pcl::PointCloud<DescriptorType>);
         features_cloud->resize(features.size());
 
         size_t j = 0;
-        std::for_each(features.begin(), features.end(), [&j, &features_cloud, &dimensionality](feature_point &feature)
+        std::for_each(features.begin(), features.end(), [&j, &features_cloud, &dimensionality](BoWDescriptorPoint &feature)
                       {
             for(int idx = 0; idx < dimensionality; idx++)
             {
@@ -180,9 +172,9 @@ public:
         std::cout << "Features were saved to file: " << path << "\n";
     }
 
-    void loadFeatures(std::string path, std::vector<feature_point> &features) noexcept
+    void loadFeatures(std::string path, std::vector<BoWDescriptorPoint> &features) noexcept
     {
-        FeatureTPtr features_cloud(new pcl::PointCloud<FeatureT>);
+        DescriptorCloudPtr features_cloud(new pcl::PointCloud<DescriptorType>);
 
         // Load descriptors from the file
         pcl::io::loadPCDFile(path.c_str(), *features_cloud);
@@ -193,9 +185,9 @@ public:
 
         for (size_t j = 0; j < features_cloud->points.size(); j++)
         {
-            feature_point descriptor_vector(dimensionality);
+            BoWDescriptorPoint descriptor_vector(dimensionality);
 
-            if (!pcl::isFinite<FeatureT>(features_cloud->points[j]))
+            if (!pcl::isFinite<DescriptorType>(features_cloud->points[j]))
                 PCL_WARN("Point %d is NaN\n", static_cast<int>(j));
 
             for (int idx = 0; idx < dimensionality; idx++)
@@ -210,23 +202,21 @@ public:
     ~FeatureEstimatorSHOT() {}
 };
 
-template <typename PointInT>
-class FeatureEstimatorFPFH : public FeatureEstimator<PointInT>
+template <typename PointType>
+class FeatureEstimatorFPFH : public FeatureEstimator<PointType>
 {
-    using FeatureEstimator<PointInT>::dimensionality;
-    using FeatureEstimator<PointInT>::support_radius_;
-    using FeatureEstimator<PointInT>::nan_indices_;
+    using FeatureEstimator<PointType>::dimensionality;
+    using FeatureEstimator<PointType>::support_radius_;
+    using FeatureEstimator<PointType>::nan_indices_;
 
 protected:
-    typedef pcl::Normal NormalT;
-    typedef pcl::FPFHSignature33 FeatureT;
-    typedef typename pcl::PointCloud<PointInT>::Ptr PointInTPtr;
-    typedef pcl::PointCloud<FeatureT>::Ptr FeatureTPtr;
-    typedef pcl::PointCloud<NormalT>::Ptr NormalTPtr;
-    typedef std::vector<float> feature_point;
+    using DescriptorType pcl::FPFHSignature33;
+    using DescriptorCloud = pcl::PointCloud<DescriptorType>::Ptr;
+    using DescriptorCloudPtr = pcl::PointCloud<DescriptorType>::Ptr;
+    using DescriptorEstimator = FeatureEstimatorFPFH<PointType>;
 
 public:
-    typedef boost::shared_ptr<FeatureEstimatorFPFH<PointInT>> Ptr;
+    using Ptr = boost::shared_ptr<DescriptorEstimator>;
 
     FeatureEstimatorFPFH()
     {
@@ -235,28 +225,28 @@ public:
     }
 
     void calculateFeatures(
-        PointInTPtr &in,
-        PointInTPtr &keypoints,
-        NormalTPtr &normals,
-        std::vector<feature_point> &features) noexcept
+        PointCloudPtr &in,
+        PointCloudPtr &keypoints,
+        SurfaceNormalsPtr &normals,
+        std::vector<BoWDescriptorPoint> &features) noexcept
     {
         std::cout << "Calculate features FPFH ...\n";
 
         for (size_t i = 0; i < in->points.size(); i++)
         {
-            if (!pcl::isFinite<PointInT>(in->points[i]))
+            if (!pcl::isFinite<PointType>(in->points[i]))
                 PCL_WARN("Point %d is NaN\n", static_cast<int>(i));
         }
 
-        FeatureTPtr fpfhs(new pcl::PointCloud<FeatureT>());
+        DescriptorCloudPtr fpfhs(new pcl::PointCloud<DescriptorType>());
 
-        pcl::FPFHEstimationOMP<PointInT, NormalT, FeatureT> fpfh_estimate;
+        pcl::FPFHEstimationOMP<PointType, NormalType, DescriptorType> fpfh_estimate;
         fpfh_estimate.setInputCloud(keypoints);
         // It was commented
         fpfh_estimate.setRadiusSearch(support_radius_);
 
         // begin -- from Semantic localization project
-        typename pcl::search::KdTree<PointInT>::Ptr tree(new pcl::search::KdTree<PointInT>());
+        KdTreePtr tree(new KdTree());
         fpfh_estimate.setSearchMethod(tree);
         // It was uncommented
         //        fpfh_estimate.setKSearch(50);
@@ -270,7 +260,7 @@ public:
 
         for (size_t j = 0; j < fpfhs->points.size(); j++)
         {
-            feature_point descriptor_vector(dimensionality);
+            BoWDescriptorPoint descriptor_vector(dimensionality);
 
             for (int idx = 0; idx < dimensionality; idx++)
             {
@@ -281,13 +271,13 @@ public:
         }
     }
 
-    void saveFeatures(std::vector<feature_point> &features, std::string path)
+    void saveFeatures(std::vector<BoWDescriptorPoint> &features, std::string path)
     {
-        FeatureTPtr features_cloud(new pcl::PointCloud<FeatureT>);
+        DescriptorCloudPtr features_cloud(new pcl::PointCloud<DescriptorType>);
         features_cloud->resize(features.size());
 
         size_t j = 0;
-        std::for_each(features.begin(), features.end(), [&j, &features_cloud, &dimensionality](feature_point &feature)
+        std::for_each(features.begin(), features.end(), [&j, &features_cloud, &dimensionality](BoWDescriptorPoint &feature)
                       {
             for(int idx = 0; idx < dimensionality; idx++)
             {
@@ -300,9 +290,9 @@ public:
         std::cout << "Features were saved to file: " << path << "\n";
     }
 
-    void loadFeatures(std::string path, std::vector<feature_point> &features)
+    void loadFeatures(std::string path, std::vector<BoWDescriptorPoint> &features)
     {
-        FeatureTPtr features_cloud(new pcl::PointCloud<FeatureT>);
+        DescriptorCloudPtr features_cloud(new pcl::PointCloud<DescriptorType>);
 
         // Load descriptors from the file
         pcl::io::loadPCDFile(path.c_str(), *features_cloud);
@@ -313,9 +303,9 @@ public:
 
         for (size_t j = 0; j < features_cloud->points.size(); j++)
         {
-            feature_point descriptor_vector(dimensionality);
+            BoWDescriptorPoint descriptor_vector(dimensionality);
 
-            if (!pcl::isFinite<FeatureT>(features_cloud->points[j]))
+            if (!pcl::isFinite<DescriptorType>(features_cloud->points[j]))
                 PCL_WARN("Point %d is NaN\n", static_cast<int>(j));
 
             for (int idx = 0; idx < dimensionality; idx++)
@@ -330,24 +320,21 @@ public:
     ~FeatureEstimatorFPFH() {}
 };
 
-template <typename PointInT>
-class FeatureEstimatorPFHRGB : public FeatureEstimator<PointInT>
+template <typename PointType>
+class FeatureEstimatorPFHRGB : public FeatureEstimator<PointType>
 {
-    using FeatureEstimator<PointInT>::dimensionality;
-    using FeatureEstimator<PointInT>::support_radius_;
-    using FeatureEstimator<PointInT>::nan_indices_;
+    using FeatureEstimator<PointType>::dimensionality;
+    using FeatureEstimator<PointType>::support_radius_;
+    using FeatureEstimator<PointType>::nan_indices_;
     int k_search_;
 
 protected:
-    typedef pcl::Normal NormalT;
-    typedef pcl::PFHRGBSignature250 FeatureT;
-    typedef typename pcl::PointCloud<PointInT>::Ptr PointInTPtr;
-    typedef pcl::PointCloud<FeatureT>::Ptr FeatureTPtr;
-    typedef pcl::PointCloud<NormalT>::Ptr NormalTPtr;
-    typedef std::vector<float> feature_point;
+    using DescriptorType = pcl::PFHRGBSignature250;
+    using DescriptorCloudPtr = pcl::PointCloud<DescriptorType>::Ptr;
+    using DescriptorEstimator = FeatureEstimatorPFHRGB<PointType>;
 
 public:
-    typedef boost::shared_ptr<FeatureEstimatorPFHRGB<PointInT>> Ptr;
+    using Ptr = boost::shared_ptr<DescriptorEstimator>;
 
     FeatureEstimatorPFHRGB()
     {
@@ -361,16 +348,16 @@ public:
     }
 
     void calculateFeatures(
-        PointInTPtr &in,
-        PointInTPtr &keypoints,
-        NormalTPtr &normals,
-        std::vector<feature_point> &features) noexcept
+        PointCloudPtr &in,
+        PointCloudPtr &keypoints,
+        SurfaceNormalsPtr &normals,
+        std::vector<BoWDescriptorPoint> &features) noexcept
     {
-        FeatureTPtr pfhrgbs(new pcl::PointCloud<FeatureT>());
+        DescriptorCloudPtr pfhrgbs(new pcl::PointCloud<DescriptorType>());
 
-        typename pcl::search::KdTree<PointInT>::Ptr tree(new pcl::search::KdTree<PointInT>);
+        KdTreePtr tree(new KdTree);
 
-        pcl::PFHRGBEstimation<PointInT, NormalT, FeatureT> pfhrgb_estimation;
+        pcl::PFHRGBEstimation<PointType, NormalType, DescriptorType> pfhrgb_estimation;
         pfhrgb_estimation.setInputCloud(keypoints);
         pfhrgb_estimation.setInputNormals(normals);
         pfhrgb_estimation.setSearchSurface(in);
@@ -382,7 +369,7 @@ public:
 
         for (size_t j = 0; j < pfhrgbs->points.size(); j++)
         {
-            feature_point descriptor_vector(dimensionality);
+            BoWDescriptorPoint descriptor_vector(dimensionality);
 
             for (int idx = 0; idx < dimensionality; idx++)
             {
@@ -393,13 +380,13 @@ public:
         }
     }
 
-    void saveFeatures(std::vector<feature_point> &features, std::string path)
+    void saveFeatures(std::vector<BoWDescriptorPoint> &features, std::string path)
     {
-        FeatureTPtr features_cloud(new pcl::PointCloud<FeatureT>);
+        DescriptorCloudPtr features_cloud(new pcl::PointCloud<DescriptorType>);
         features_cloud->resize(features.size());
 
         size_t j = 0;
-        std::for_each(features.begin(), features.end(), [&j, &features_cloud, &dimensionality](feature_point &feature)
+        std::for_each(features.begin(), features.end(), [&j, &features_cloud, &dimensionality](BoWDescriptorPoint &feature)
                       {
             for(int idx = 0; idx < dimensionality; idx++)
             {
@@ -412,9 +399,9 @@ public:
         std::cout << "Features were saved to file: " << path << "\n";
     }
 
-    void loadFeatures(std::string path, std::vector<feature_point> &features)
+    void loadFeatures(std::string path, std::vector<BoWDescriptorPoint> &features)
     {
-        FeatureTPtr features_cloud(new pcl::PointCloud<FeatureT>);
+        DescriptorCloudPtr features_cloud(new pcl::PointCloud<DescriptorType>);
 
         // Load descriptors from the file
         pcl::io::loadPCDFile(path.c_str(), *features_cloud);
@@ -425,9 +412,9 @@ public:
 
         for (size_t j = 0; j < features_cloud->points.size(); j++)
         {
-            feature_point descriptor_vector(dimensionality);
+            BoWDescriptorPoint descriptor_vector(dimensionality);
 
-            if (!pcl::isFinite<FeatureT>(features_cloud->points[j]))
+            if (!pcl::isFinite<DescriptorType>(features_cloud->points[j]))
                 PCL_WARN("Point %d is NaN\n", static_cast<int>(j));
 
             for (int idx = 0; idx < dimensionality; idx++)
@@ -442,23 +429,20 @@ public:
     ~FeatureEstimatorPFHRGB() {}
 };
 
-template <typename PointInT>
-class FeatureEstimatorColorSHOT : public FeatureEstimator<PointInT>
+template <typename PointType>
+class FeatureEstimatorColorSHOT : public FeatureEstimator<PointType>
 {
-    using FeatureEstimator<PointInT>::dimensionality;
-    using FeatureEstimator<PointInT>::support_radius_;
-    using FeatureEstimator<PointInT>::nan_indices_;
+    using FeatureEstimator<PointType>::dimensionality;
+    using FeatureEstimator<PointType>::support_radius_;
+    using FeatureEstimator<PointType>::nan_indices_;
 
 protected:
-    typedef pcl::Normal NormalT;
-    typedef pcl::SHOT1344 FeatureT;
-    typedef typename pcl::PointCloud<PointInT>::Ptr PointInTPtr;
-    typedef pcl::PointCloud<FeatureT>::Ptr FeatureTPtr;
-    typedef pcl::PointCloud<NormalT>::Ptr NormalTPtr;
-    typedef std::vector<float> feature_point;
+    using DescriptorType = pcl::SHOT1344;
+    using DescriptorCloudPtr = pcl::PointCloud<FeatureType>::Ptr;
+    using DescriptorEstimator = FeatureEstimatorColorSHOT<PointType>;
 
 public:
-    typedef boost::shared_ptr<FeatureEstimatorColorSHOT<PointInT>> Ptr;
+    using Ptr = boost::shared_ptr<DescriptorEstimator>;
 
     FeatureEstimatorColorSHOT()
     {
@@ -467,14 +451,14 @@ public:
     }
 
     void calculateFeatures(
-        PointInTPtr &in,
-        PointInTPtr &keypoints,
-        NormalTPtr &normals,
-        std::vector<feature_point> &features) noexcept
+        PointCloudPtr &in,
+        PointCloudPtr &keypoints,
+        SurfaceNormalsPtr &normals,
+        std::vector<BoWDescriptorPoint> &features) noexcept
     {
-        FeatureTPtr cshots(new pcl::PointCloud<FeatureT>());
+        DescriptorCloudPtr cshots(new pcl::PointCloud<DescriptorType>());
 
-        pcl::SHOTColorEstimation<PointInT, NormalT> shotestimator;
+        pcl::SHOTColorEstimation<PointType, NormalType> shotestimator;
         shotestimator.setInputCloud(keypoints);
         shotestimator.setInputNormals(normals);
         // computes the pointcloud resolution
@@ -487,7 +471,7 @@ public:
 
         for (size_t j = 0; j < cshots->points.size(); j++)
         {
-            feature_point descriptor_vector(dimensionality);
+            BoWDescriptorPoint descriptor_vector(dimensionality);
 
             for (int idx = 0; idx < dimensionality; idx++)
             {
@@ -498,13 +482,13 @@ public:
         }
     }
 
-    void saveFeatures(std::vector<feature_point> &features, std::string path)
+    void saveFeatures(std::vector<BoWDescriptorPoint> &features, std::string path)
     {
-        FeatureTPtr features_cloud(new pcl::PointCloud<FeatureT>);
+        DescriptorCloudPtr features_cloud(new pcl::PointCloud<DescriptorType>);
         features_cloud->resize(features.size());
 
         size_t j = 0;
-        std::for_each(features.begin(), features.end(), [&j, &features_cloud, &dimensionality](feature_point &feature)
+        std::for_each(features.begin(), features.end(), [&j, &features_cloud, &dimensionality](BoWDescriptorPoint &feature)
                       {
             for(int idx = 0; idx < dimensionality; idx++)
             {
@@ -517,9 +501,9 @@ public:
         std::cout << "Features were saved to file: " << path << "\n";
     }
 
-    void loadFeatures(std::string path, std::vector<feature_point> &features)
+    void loadFeatures(std::string path, std::vector<BoWDescriptorPoint> &features)
     {
-        FeatureTPtr features_cloud(new pcl::PointCloud<FeatureT>);
+        DescriptorCloudPtr features_cloud(new pcl::PointCloud<DescriptorType>);
 
         // Load descriptors from the file
         pcl::io::loadPCDFile(path.c_str(), *features_cloud);
@@ -530,9 +514,9 @@ public:
 
         for (size_t j = 0; j < features_cloud->points.size(); j++)
         {
-            feature_point descriptor_vector(dimensionality);
+            BoWDescriptorPoint descriptor_vector(dimensionality);
 
-            if (!pcl::isFinite<FeatureT>(features_cloud->points[j]))
+            if (!pcl::isFinite<DescriptorCloud>(features_cloud->points[j]))
                 PCL_WARN("Point %d is NaN\n", static_cast<int>(j));
 
             for (int idx = 0; idx < dimensionality; idx++)

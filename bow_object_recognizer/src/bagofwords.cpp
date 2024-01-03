@@ -30,7 +30,7 @@ BoWTrainer::BoWTrainer(int cluster_count)
     size_ = 0;
 }
 
-void BoWTrainer::add(feature_point descriptor)
+void BoWTrainer::add(BoWDescriptorPoint descriptor)
 {
     descriptors_.push_back(std::move(descriptor));
     size_ = size_ + 1;
@@ -52,7 +52,7 @@ void BoWTrainer::setCentersInitFlag(std::string_view centers_init_flag)
     }
 }
 
-std::vector<feature_point> BoWTrainer::cluster()
+std::vector<BoWDescriptorPoint> BoWTrainer::cluster()
 {
     std::cout << "Clustering descriptors ...\n";
 
@@ -60,7 +60,7 @@ std::vector<feature_point> BoWTrainer::cluster()
 
     int descr_length = static_cast<int>(descriptors_[0].size());
 
-    std::vector<feature_point> vocabulary;
+    std::vector<BoWDescriptorPoint> vocabulary;
 
 #ifndef DEBUG_DESCRIPTORS_COUNT
 
@@ -71,7 +71,7 @@ std::vector<feature_point> BoWTrainer::cluster()
 
     for (auto i = 0; i < points.rows; i++)
     {
-        feature_point descriptor = descriptors_[i];
+        BoWDescriptorPoint descriptor = descriptors_[i];
 
         for (auto j = 0; j < points.cols; j++)
         {
@@ -82,9 +82,9 @@ std::vector<feature_point> BoWTrainer::cluster()
     // TermCriteria::EPS+TermCriteria::COUNT, 10, 1.0
     cv::kmeans(points, cluster_count_, labels, cv::TermCriteria(TermCriteria::MAX_ITER + TermCriteria::EPS, 10000, 0.0001), 3, kmeans_centers_init_flag_, centers);
 
-    for (auto i = 0; i < centers.rows; i++)
+    for (decltype(centers.rows) i = 0; i < centers.rows; i++)
     {
-        feature_point center_descriptor(descr_length);
+        BoWDescriptorPoint center_descriptor(descr_length);
 
         if (isinf(centers.at<float>(i, 0)))
         {
@@ -106,7 +106,7 @@ std::vector<feature_point> BoWTrainer::cluster()
     return vocabulary;
 }
 
-std::vector<feature_point> BoWTrainer::getDescriptors()
+std::vector<BoWDescriptorPoint> BoWTrainer::getDescriptors()
 {
     return descriptors_;
 }
@@ -119,7 +119,7 @@ DescriptorMatcher::~DescriptorMatcher()
     clear();
 }
 
-void DescriptorMatcher::add(std::vector<feature_point> &descriptors)
+void DescriptorMatcher::add(std::vector<BoWDescriptorPoint> &descriptors)
 {
     train_descriptors_.emplace(train_descriptors_.end(), std::move(descriptors));
 }
@@ -143,7 +143,7 @@ void DescriptorMatcher::train()
     data = flann::Matrix<float>(new float[train_descriptors_.size() * train_descriptors_[0].size()], train_descriptors_.size(), train_descriptors_[0].size());
 
     size_t i = 0;
-    std::for_each(train_descriptors_.begin(), train_descriptors_.end(), [&i, &data](feature_point &descriptor)
+    std::for_each(train_descriptors_.begin(), train_descriptors_.end(), [&i, &data](BoWDescriptorPoint &descriptor)
                   {
         for(size_t j = 0; j < descriptor.size(); j++)
         {
@@ -155,13 +155,13 @@ void DescriptorMatcher::train()
     {
         PCL_INFO("Linear index params were applied\n");
 
-        index_ = new flann::Index<DistT>(data, flann::LinearIndexParams());
+        index_ = boost::make_unique<flann::Index<DistType>>(data, flann::LinearIndexParams());
     }
     else
     {
         PCL_INFO("KdTree index params were applied\n");
 
-        index_ = new flann::Index<DistT>(data, flann::KDTreeIndexParams(4));
+        index_ = boost::make_unique<flann::Index<DistType>>(data, flann::KDTreeIndexParams(4));
     }
     index_->buildIndex();
 
@@ -170,7 +170,7 @@ void DescriptorMatcher::train()
     index_->save(index_file_path_);
 }
 
-void DescriptorMatcher::match(std::vector<feature_point> &query_descriptors, std::vector<DMatch> &matches)
+void DescriptorMatcher::match(std::vector<BoWDescriptorPoint> &query_descriptors, std::vector<DMatch> &matches)
 {
     std::vector<std::vector<DMatch>> knn_matches;
 
@@ -178,14 +178,14 @@ void DescriptorMatcher::match(std::vector<feature_point> &query_descriptors, std
     convertMatches(knn_matches, matches);
 }
 
-void DescriptorMatcher::knnMatch(std::vector<feature_point> &query_descriptors, std::vector<std::vector<DMatch>> &matches, int knn)
+void DescriptorMatcher::knnMatch(std::vector<BoWDescriptorPoint> &query_descriptors, std::vector<std::vector<DMatch>> &matches, int knn)
 {
     matches.clear();
 
     // FLANN kNN search
     for (size_t i = 0; i < query_descriptors.size(); i++)
     {
-        feature_point descriptor = query_descriptors[i];
+        BoWDescriptorPoint descriptor = query_descriptors[i];
         auto descr_length = descriptor.size();
 
         flann::Matrix<float> p = flann::Matrix<float>(new float[descr_length], 1, descr_length);
@@ -234,7 +234,7 @@ void DescriptorMatcher::loadIndex(int &data_length)
 
     std::cout << "Loading index from file " << index_file_path_ << "\n";
 
-    index_ = new flann::Index<DistT>(data, flann::SavedIndexParams(index_file_path_));
+    index_ = boost::make_unique<flann::Index<DistType>>(data, flann::SavedIndexParams(index_file_path_));
     index_->buildIndex();
 }
 
@@ -244,7 +244,7 @@ BoWModelDescriptorExtractor::BoWModelDescriptorExtractor(std::string index_file_
     dmatcher_ = DescriptorMatcher::Ptr(new DescriptorMatcher(index_file_path, data_file_path));
 }
 
-void BoWModelDescriptorExtractor::setVocabulary(std::vector<feature_point> vocabulary)
+void BoWModelDescriptorExtractor::setVocabulary(std::vector<BoWDescriptorPoint> vocabulary)
 {
     dmatcher_->clear();
     dmatcher_->add(vocabulary);
@@ -285,7 +285,7 @@ BoWModelDescriptorExtractor::~BoWModelDescriptorExtractor()
     dmatcher_.reset();
 }
 
-void BoWModelDescriptorExtractor::compute(std::vector<feature_point> model_descriptors, bow_vector &bow_model_descriptor)
+void BoWModelDescriptorExtractor::compute(std::vector<BoWDescriptorPoint> model_descriptors, BoWDescriptor &bow_model_descriptor)
 {
     bow_model_descriptor.clear();
     bow_model_descriptor.resize(descriptor_size_, 0);

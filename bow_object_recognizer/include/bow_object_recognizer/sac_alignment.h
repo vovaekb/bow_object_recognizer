@@ -11,6 +11,7 @@
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
 #include <pcl/registration/ia_ransac.h>
+#include "typedefs.h"
 
 #ifdef USE_RANSAC_ALIGNMENT
 template <typename FeatureInT>
@@ -18,9 +19,8 @@ class FeatureCloud
 {
 public:
     // A bit of shorthand
-    typedef pcl::PointXYZRGB PointInT;
-    typedef pcl::PointCloud<PointInT>::Ptr PointInTPtr;
-    typedef typename pcl::PointCloud<FeatureInT>::Ptr FeatureInTPtr;
+    using DescriptorCloudIn = pcl::PointCloud<FeatureInT>;
+    using DescriptorCloudInPtr = pcl::PointCloud<FeatureInT>::Ptr;
 
     FeatureCloud() {}
 
@@ -34,7 +34,7 @@ public:
 
     // Process the given cloud
     void
-    setInputCloud(PointInTPtr xyz)
+    setInputCloud(PointCloudPtr xyz)
     {
         xyz_ = xyz;
     }
@@ -43,12 +43,12 @@ public:
     void
     loadInputCloud(const std::string &pcd_file)
     {
-        xyz_ = PointInTPtr(new pcl::PointCloud<PointInT>);
+        xyz_ = PointCloudPtr(new PointCloud);
         pcl::io::loadPCDFile(pcd_file, *xyz_);
     }
 
     void
-    setInputFeatures(FeatureInTPtr features)
+    setInputFeatures(DescriptorCloudInPtr features)
     {
         features_ = features;
     }
@@ -57,11 +57,11 @@ public:
     void
     loadInputFeatures(const std::string &pcd_file)
     {
-        features_ = FeatureInTPtr(new pcl::PointCloud<FeatureInT>);
+        features_ = DescriptorCloudInPtr(new DescriptorCloudIn);
         pcl::io::loadPCDFile(pcd_file, *features_);
     }
 
-    void setLocalFeatures(typename pcl::PointCloud<FeatureInT>::Ptr) {}
+    void setLocalFeatures(DescriptorCloudInPtr) {}
 
     std::string
     getId()
@@ -70,14 +70,14 @@ public:
     }
 
     // Get a pointer to the cloud 3D points
-    PointInTPtr
+    PointCloudPtr
     getPointCloud() const
     {
         return (xyz_);
     }
 
     // Get a pointer to the cloud of feature descriptors
-    typename pcl::PointCloud<FeatureInT>::Ptr
+    DescriptorCloudInPtr
     getLocalFeatures() const
     {
         return (features_);
@@ -85,8 +85,8 @@ public:
 
 private:
     // Point cloud data
-    PointInTPtr xyz_;
-    FeatureInTPtr features_;
+    PointCloudPtr xyz_;
+    DescriptorCloudInPtr features_;
     std::string id_;
     pcl::PointIndices::Ptr nan_indices_;
 };
@@ -97,8 +97,6 @@ template <typename FeatureInT>
 class SACAlignment
 {
 public:
-    typedef pcl::PointXYZRGB PointInT;
-
     // A struct for storing alignment results
     struct Result
     {
@@ -147,7 +145,7 @@ public:
         sac_ia_.setInputCloud(template_cloud.getPointCloud());
         sac_ia_.setSourceFeatures(template_cloud.getLocalFeatures());
 
-        pcl::PointCloud<PointInT> registration_output;
+        PointCloud registration_output;
         sac_ia_.align(registration_output);
 
         PCL_INFO("SAC-IA alignment is complete\n");
@@ -199,11 +197,11 @@ public:
 
 private:
     // A list of template clouds and the target to which they will be aligned
-    typename std::vector<FeatureCloud<FeatureInT>> templates_;
+    std::vector<FeatureCloud<FeatureInT>> templates_;
     FeatureCloud<FeatureInT> target_;
 
     // The Sample Consensus Initial Alignment (SAC-IA) registration routine and its parameters
-    typename pcl::SampleConsensusInitialAlignment<PointInT, PointInT, FeatureInT> sac_ia_;
+    pcl::SampleConsensusInitialAlignment<PointType, PointType, FeatureInT> sac_ia_;
     float min_sample_distance_;
     float max_correspondence_distance_;
     int nr_iterations_;

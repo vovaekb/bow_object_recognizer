@@ -1,8 +1,8 @@
-cmake_minimum_required(VERSION 2.8 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.10.2)
 
 #set(CMAKE_CXX_FLAGS "-std=c++0x ${CMAKE_CXX_FLAGS}") #"-g")
 
-# Add -std=c++0x ${CMAKE_CXX_FLAGS}
+set (CMAKE_CXX_STANDARD 17)
 
 set(SUBSUBSYS_NAME bow_object_recognizer)
 
@@ -11,7 +11,7 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR})
 
 project(bow_object_recognizer)
 
-find_package(PCL 1.2 REQUIRED)
+find_package(PCL 1.12.1 REQUIRED)
 find_package(OpenCV REQUIRED)
 
 include_directories(${PCL_INCLUDE_DIRS})

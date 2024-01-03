@@ -3,7 +3,6 @@
  * Date: May 2016
  */
 
-
 #include <stdio.h>
 #include <vector>
 #include <math.h>
@@ -36,66 +35,58 @@
 
 using namespace std;
 
-typedef pcl::PointXYZRGB PointInT;
-typedef pcl::Normal NormalT;
-typedef pcl::PointCloud<PointInT>::Ptr PointInTPtr;
-typedef pcl::PointCloud<PointInT>::ConstPtr PointInTConstPtr;
-typedef pcl::PointCloud<NormalT>::Ptr NormalTPtr;
-typedef std::vector<float> feature_point;
-
 // Global parameters
 string training_dir;
 
 std::string training_dataset;
 
-string feature_descriptor ("fpfh");
-string keypoint_detector ("us");
+string feature_descriptor("fpfh");
+string keypoint_detector("us");
 string vocabulary_file;
-string kmeans_centers_init_flag ("random_centers");
-int vocabulary_size (500);
-bool use_partial_views (false);
-bool perform_scaling (false);
-bool perform_voxelizing (false);
-bool save_descriptors (false);
+string kmeans_centers_init_flag("random_centers");
+int vocabulary_size(500);
+bool use_partial_views(false);
+bool perform_scaling(false);
+bool perform_voxelizing(false);
+bool save_descriptors(false);
 
-string word_freq_file ("word_frequencies.txt");
-string calc_time_file ("calc_time.txt");
-string models_word_freq_file ("models_word_frequences.txt");
-string scene_word_freq_file ("scene_word_frequences.txt");
-
+string word_freq_file("word_frequencies.txt");
+string calc_time_file("calc_time.txt");
+string models_word_freq_file("models_word_frequences.txt");
+string scene_word_freq_file("scene_word_frequences.txt");
 
 int descr_length;
 
 // Algorithm parameters
-float voxel_grid_size (0.001f);
-int norm_est_k (10);
-float descr_rad (0.05f); // 0.02f
-float norm_rad (0.02f); // 0.01f
+float voxel_grid_size(0.001f);
+int norm_est_k(10);
+float descr_rad(0.05f); // 0.02f
+float norm_rad(0.02f);  // 0.01f
 
 // ISS
-int iss_salient_rad_factor (6); //  5
-int iss_non_max_rad_factor (4); // 3
+int iss_salient_rad_factor(6); //  5
+int iss_non_max_rad_factor(4); // 3
 // SIFT
-float sift_min_scale (0.025);
-int sift_nr_octaves (2);
-int sift_nr_scales (3);
-float sift_min_contrast (1);
-float sift_radius (0.2);
+float sift_min_scale(0.025);
+int sift_nr_octaves(2);
+int sift_nr_scales(3);
+float sift_min_contrast(1);
+float sift_radius(0.2);
 // Harris
-float harris_radius (0.01);
-float harris_thresh (0.0001);
+float harris_radius(0.01);
+float harris_thresh(0.0001);
 
-int pfhrgb_k (50);
+int pfhrgb_k(50);
 
 float us_radius;
 
 vector<Model> training_models;
 vector<string> training_scenes;
 
-//Source training_source;
+// Source training_source;
 Source::Ptr training_source;
 KeypointDetector::Ptr detector;
-FeatureEstimator<PointInT>::Ptr feature_estimator;
+FeatureEstimator<PointType>::Ptr feature_estimator;
 
 void trainVocabulary(string vocabulary_path)
 {
@@ -105,43 +96,41 @@ void trainVocabulary(string vocabulary_path)
 
     bow_trainer->setCentersInitFlag(kmeans_centers_init_flag);
 
-
-    if(keypoint_detector.compare("us") == 0)
+    if (keypoint_detector.compare("us") == 0)
     {
         boost::shared_ptr<UniformKeypointDetector> cast_detector = boost::static_pointer_cast<UniformKeypointDetector>(detector);
         cast_detector->setRadius(0.01);
     }
-    else if(keypoint_detector.compare("iss") == 0)
+    else if (keypoint_detector.compare("iss") == 0)
     {
         boost::shared_ptr<ISSKeypointDetector> cast_detector = boost::static_pointer_cast<ISSKeypointDetector>(detector);
         cast_detector->setSalientRadiusFactor(iss_salient_rad_factor);
         cast_detector->setNonMaxRadiusFactor(iss_non_max_rad_factor);
     }
-    else if(keypoint_detector.compare("sift") == 0)
+    else if (keypoint_detector.compare("sift") == 0)
     {
         boost::shared_ptr<SIFTKeypointDetector> cast_detector = boost::static_pointer_cast<SIFTKeypointDetector>(detector);
         cast_detector->setRadius(sift_radius);
         cast_detector->setScales(sift_min_scale, sift_nr_octaves, sift_nr_scales);
         cast_detector->setMinContrast(sift_min_contrast);
     }
-    else if(keypoint_detector.compare("harris") == 0)
+    else if (keypoint_detector.compare("harris") == 0)
     {
         boost::shared_ptr<Harris3DKeypointDetector> cast_detector = boost::static_pointer_cast<Harris3DKeypointDetector>(detector);
         cast_detector->setThreshold(harris_thresh);
         cast_detector->setRadius(harris_radius);
     }
 
-
     // Iterate over all training models
-    for(auto & training_model : training_models)
+    for (auto &training_model : training_models)
     {
         printf("\n---------------- Loading model %s ---------------\n", training_model.model_id.c_str());
 
         string model_path = training_source->getModelDir(training_model);
 
-        if(use_partial_views)
+        if (use_partial_views)
         {
-            for(auto & view_id : training_model.views)
+            for (auto &view_id : training_model.views)
             {
                 std::stringstream view_descr_file;
 
@@ -149,15 +138,15 @@ void trainVocabulary(string vocabulary_path)
 
                 string descr_file = view_descr_file.str();
 
-                if(!boost::filesystem::exists(descr_file))
+                if (!boost::filesystem::exists(descr_file))
                 {
                     std::cout << "Descriptor for view " << view_id << " does not exist\n";
 
                     cout << "----------- Process view cloud -------------\n";
 
-                    PointInTPtr view_cloud (new pcl::PointCloud<PointInT> ());
-                    NormalTPtr normals (new pcl::PointCloud<NormalT> ());
-                    PointInTPtr keypoints (new pcl::PointCloud<PointInT> ());
+                    PointCloudPtr view_cloud(new PointCloud());
+                    SurfaceNormalsPtr normals(new SurfaceNormals());
+                    PointCloudPtr keypoints(new PointCloud());
 
                     std::stringstream view_file;
 
@@ -166,15 +155,13 @@ void trainVocabulary(string vocabulary_path)
 
                     std::cout << "View cloud has " << view_cloud->points.size() << " points\n";
 
-
-                    NormalEstimator<PointInT>::Ptr normal_estimator (new NormalEstimator<PointInT>);
+                    NormalEstimator<PointType>::Ptr normal_estimator(new NormalEstimator<PointType>);
                     normal_estimator->setDoScaling(perform_scaling);
                     normal_estimator->setDoVoxelizing(perform_voxelizing);
                     normal_estimator->setGridResolution(voxel_grid_size);
                     normal_estimator->setNormalK(norm_est_k);
-                    //normal_estimator->setNormalRadius(norm_rad);
+                    // normal_estimator->setNormalRadius(norm_rad);
                     normal_estimator->estimate(view_cloud, view_cloud, normals);
-
 
                     // Extract keypoints
                     detector->detectKeypoints(view_cloud, keypoints);
@@ -182,25 +169,25 @@ void trainVocabulary(string vocabulary_path)
                     std::stringstream keypoints_file;
                     keypoints_file << model_path << "/views/" << view_id << "_keypoints.pcd";
 
-
                     detector->saveKeypoints(keypoints, keypoints_file.str());
 
-                    std::vector<feature_point> descr_vector;
+                    std::vector<BoWDescriptorPoint> descr_vector;
 
                     feature_estimator->setSupportRadius(descr_rad);
 
                     feature_estimator->calculateFeatures(view_cloud, keypoints, normals, descr_vector);
 
-                    if(!descr_vector.size()) continue;
+                    if (!descr_vector.size())
+                        continue;
 
-                    if(save_descriptors)
+                    if (save_descriptors)
                     {
                         feature_estimator->saveFeatures(descr_vector, descr_file);
                     }
 
                     cout << "Pass descriptors to the BoW trainer\n\n";
 
-                    for(auto & descriptor : descr_vector)
+                    for (auto &descriptor : descr_vector)
                     {
                         bow_trainer->add(descriptor);
                     }
@@ -210,12 +197,12 @@ void trainVocabulary(string vocabulary_path)
                     cout << "-------------- Load descriptors from file -----------------------\n";
 
                     // Load descriptors from file
-                    std::vector<feature_point> descr_vector;
+                    std::vector<BoWDescriptorPoint> descr_vector;
                     feature_estimator->loadFeatures(descr_file, descr_vector);
 
                     cout << "Pass descriptors to the BoW trainer\n\n";
 
-                    for(auto & descriptor : descr_vector)
+                    for (auto &descriptor : descr_vector)
                     {
                         bow_trainer->add(descriptor);
                     }
@@ -224,8 +211,8 @@ void trainVocabulary(string vocabulary_path)
         }
         else
         {
-            PointInTPtr model_cloud (new pcl::PointCloud<PointInT> ());
-            PointInTPtr model_processed (new pcl::PointCloud<PointInT> ());
+            PointCloudPtr model_cloud(new PointCloud());
+            PointCloudPtr model_processed(new PointCloud());
 
             pcl::io::loadPCDFile(training_model.cloud_path.c_str(), *model_cloud);
 
@@ -235,23 +222,21 @@ void trainVocabulary(string vocabulary_path)
 
             std::cout << "Cloud has " << model_cloud->points.size() << "\n";
 
-
             // Process cloud and calculate descriptors
-            if(!boost::filesystem::exists(descr_file))
+            if (!boost::filesystem::exists(descr_file))
             {
                 cout << "----------- Process cloud -------------\n";
 
-                NormalTPtr normals (new pcl::PointCloud<NormalT> ());
-                PointInTPtr keypoints (new pcl::PointCloud<PointInT> ());
+                SurfaceNormalsPtr normals(new SurfaceNormals());
+                PointCloudPtr keypoints(new PointCloud());
 
-                NormalEstimator<PointInT>::Ptr normal_estimator (new NormalEstimator<PointInT>);
+                NormalEstimator<PointType>::Ptr normal_estimator(new NormalEstimator<PointType>);
                 normal_estimator->setDoScaling(perform_scaling);
                 normal_estimator->setDoVoxelizing(perform_voxelizing);
                 normal_estimator->setGridResolution(voxel_grid_size);
                 normal_estimator->setNormalK(norm_est_k);
-                //normal_estimator->setNormalRadius(norm_rad);
+                // normal_estimator->setNormalRadius(norm_rad);
                 normal_estimator->estimate(model_cloud, model_processed, normals);
-
 
                 // Extract keypoints
                 detector->detectKeypoints(model_cloud, keypoints);
@@ -271,84 +256,79 @@ void trainVocabulary(string vocabulary_path)
 
                 string processed_path = path_ss.str();
 
-                if(!boost::filesystem::exists(processed_path))
+                if (!boost::filesystem::exists(processed_path))
                 {
                     pcl::io::savePCDFileASCII(processed_path.c_str(), *model_processed);
                 }
 
-
-                std::vector<feature_point> descr_vector;
+                std::vector<BoWDescriptorPoint> descr_vector;
 
                 feature_estimator->setSupportRadius(descr_rad);
 
                 feature_estimator->calculateFeatures(model_processed, keypoints, normals, descr_vector);
 
-                if(!descr_vector.size()) continue;
+                if (!descr_vector.size())
+                    continue;
 
-                if(save_descriptors)
+                if (save_descriptors)
                 {
                     feature_estimator->saveFeatures(descr_vector, descr_file);
                 }
 
                 cout << "Pass descriptors to the BoW trainer\n\n";
 
-                for(auto & descriptor : descr_vector)
+                for (auto &descriptor : descr_vector)
                 {
                     bow_trainer->add(descriptor);
                 }
-
             }
             else
             {
                 cout << "-------------- Load descriptors from file -----------------------\n";
 
                 // Load descriptors from file
-                std::vector<feature_point> descr_vector;
+                std::vector<BoWDescriptorPoint> descr_vector;
                 feature_estimator->loadFeatures(descr_file, descr_vector);
 
                 cout << "Pass descriptors to the BoW trainer\n\n";
 
-                for(auto & descriptor : descr_vector)
+                for (auto &descriptor : descr_vector)
                 {
                     bow_trainer->add(descriptor);
                 }
-
             }
         }
-
     }
 
-
     // Setup parameters for keypoint detector
-    if(keypoint_detector.compare("us") == 0)
+    if (keypoint_detector.compare("us") == 0)
     {
         boost::shared_ptr<UniformKeypointDetector> cast_detector = boost::static_pointer_cast<UniformKeypointDetector>(detector);
         cast_detector->setRadius(0.02); // 0.01);
     }
-    else if(keypoint_detector.compare("iss") == 0)
+    else if (keypoint_detector.compare("iss") == 0)
     {
         boost::shared_ptr<ISSKeypointDetector> cast_detector = boost::static_pointer_cast<ISSKeypointDetector>(detector);
         cast_detector->setSalientRadiusFactor(iss_salient_rad_factor);
         cast_detector->setNonMaxRadiusFactor(iss_non_max_rad_factor);
     }
-    else if(keypoint_detector.compare("sift") == 0)
+    else if (keypoint_detector.compare("sift") == 0)
     {
         boost::shared_ptr<SIFTKeypointDetector> cast_detector = boost::static_pointer_cast<SIFTKeypointDetector>(detector);
         cast_detector->setRadius(sift_radius);
         cast_detector->setScales(sift_min_scale, sift_nr_octaves, sift_nr_scales);
         cast_detector->setMinContrast(sift_min_contrast);
     }
-    if(keypoint_detector.compare("harris") == 0)
+    if (keypoint_detector.compare("harris") == 0)
     {
         boost::shared_ptr<Harris3DKeypointDetector> cast_detector = boost::static_pointer_cast<Harris3DKeypointDetector>(detector);
         cast_detector->setThreshold(harris_thresh);
         cast_detector->setRadius(harris_radius);
     }
 
-
-    for(auto & scene_file : training_scenes)
+    for (auto &scene_file : training_scenes)
     {
-        PointInTPtr scene_cloud (new pcl::PointCloud<PointInT> ());
+        PointCloudPtr scene_cloud(new PointCloud());
 
         pcl::io::loadPCDFile(scene_file.c_str(), *scene_cloud);
 
@@ -361,65 +341,63 @@ void trainVocabulary(string vocabulary_path)
 
         string descr_dir = path_ss.str();
 
-        if(!boost::filesystem::exists(descr_dir))
+        if (!boost::filesystem::exists(descr_dir))
             boost::filesystem::create_directory(descr_dir);
 
         path_ss << "/" << scene_name;
         string descr_file = path_ss.str();
 
-        if(!boost::filesystem::exists(descr_file))
+        if (!boost::filesystem::exists(descr_file))
         {
-            NormalTPtr normals (new pcl::PointCloud<NormalT> ());
-            PointInTPtr keypoints (new pcl::PointCloud<PointInT> ());
+            SurfaceNormalsPtr normals(new SurfaceNormals());
+            PointCloudPtr keypoints(new PointCloud());
 
-            NormalEstimator<PointInT>::Ptr normal_estimator (new NormalEstimator<PointInT>);
+            NormalEstimator<PointType>::Ptr normal_estimator(new NormalEstimator<PointType>);
 
             normal_estimator->setDoScaling(false);
             normal_estimator->setDoVoxelizing(perform_voxelizing);
             normal_estimator->setGridResolution(voxel_grid_size);
             normal_estimator->setNormalK(norm_est_k);
-            //normal_estimator->setNormalRadius(norm_rad);
+            // normal_estimator->setNormalRadius(norm_rad);
             normal_estimator->estimate(scene_cloud, scene_cloud, normals);
 
             // Detect keypoints
             detector->detectKeypoints(scene_cloud, keypoints);
 
-            std::vector<feature_point> descr_vector;
+            std::vector<BoWDescriptorPoint> descr_vector;
 
             feature_estimator->setSupportRadius(descr_rad);
 
             feature_estimator->calculateFeatures(scene_cloud, keypoints, normals, descr_vector);
 
-            if(!descr_vector.size()) continue;
+            if (!descr_vector.size())
+                continue;
 
             feature_estimator->saveFeatures(descr_vector, descr_file);
 
-            for(auto & descriptor : descr_vector)
+            for (auto &descriptor : descr_vector)
             {
                 bow_trainer->add(descriptor);
             }
-
         }
         else
         {
             cout << "-------------- Load descriptors from file -----------------------\n";
 
             // Load descriptors from file
-            std::vector<feature_point> descr_vector;
+            std::vector<BoWDescriptorPoint> descr_vector;
             feature_estimator->loadFeatures(descr_file, descr_vector);
 
-            for(auto & descriptor : descr_vector.views)
+            for (auto &descriptor : descr_vector.views)
             {
                 bow_trainer->add(descriptor);
             }
-
         }
     }
 
-
     cout << "-------- Clustering ---------------\n";
 
-    vector<feature_point> vocabulary = bow_trainer->cluster();
+    vector<BoWDescriptorPoint> vocabulary = bow_trainer->cluster();
 
     printf("Vocabulary file path: %s\n", vocabulary_path.c_str());
 
@@ -427,10 +405,11 @@ void trainVocabulary(string vocabulary_path)
 }
 
 /*
-  * Command line utilities
-*/
+ * Command line utilities
+ */
 
-void showHelp(char* filename) {
+void showHelp(char *filename)
+{
     std::cout << "**************************************************************************************************\n";
     std::cout << "*                                                                                                *\n";
     std::cout << "*                             Building visual vocabulary - Usage Guide                           *\n";
@@ -464,25 +443,37 @@ void showHelp(char* filename) {
 void printParams()
 {
     cout << "training dir: " << training_dir.c_str() << "\n"
-            "descriptor: " << feature_descriptor.c_str() << "\n"
-            "descriptor radius: " << descr_rad << "\n"
-            "keypoint detector: " << keypoint_detector.c_str() << "\n"
-            "vocabulary size: " << vocabulary_size << "\n"
-            "use partial views: " << use_partial_views << "\n"
-            "perform scale: " << (perform_scaling ? "true" : "false") << "\n"
-            "perform voxelizing: " << (perform_voxelizing ? "true" : "false") << "\n"
-            "save descriptors: " << (save_descriptors ? "true" : "false") << "\n"
-            "voxel grid size: " << voxel_grid_size << "\n"
-            "harris threshold: " << harris_thresh << "\n"
-            "kmeans center initialization: " << kmeans_centers_init_flag << "\n"
-            "harris radius: " << harris_radius << "\n";
+                                                        "descriptor: "
+         << feature_descriptor.c_str() << "\n"
+                                          "descriptor radius: "
+         << descr_rad << "\n"
+                         "keypoint detector: "
+         << keypoint_detector.c_str() << "\n"
+                                         "vocabulary size: "
+         << vocabulary_size << "\n"
+                               "use partial views: "
+         << use_partial_views << "\n"
+                                 "perform scale: "
+         << (perform_scaling ? "true" : "false") << "\n"
+                                                    "perform voxelizing: "
+         << (perform_voxelizing ? "true" : "false") << "\n"
+                                                       "save descriptors: "
+         << (save_descriptors ? "true" : "false") << "\n"
+                                                     "voxel grid size: "
+         << voxel_grid_size << "\n"
+                               "harris threshold: "
+         << harris_thresh << "\n"
+                             "kmeans center initialization: "
+         << kmeans_centers_init_flag << "\n"
+                                        "harris radius: "
+         << harris_radius << "\n";
 }
 
-void parseCommandLine(int argc, char** argv)
+void parseCommandLine(int argc, char **argv)
 {
     pcl::console::parse_argument(argc, argv, "--train_dir", training_dir);
 
-    if(training_dir.compare("") == 0)
+    if (training_dir.compare("") == 0)
     {
         PCL_ERROR("The train_dir parameter is missing\n");
         showHelp(argv[0]);
@@ -497,16 +488,16 @@ void parseCommandLine(int argc, char** argv)
 
     pcl::console::parse_argument(argc, argv, "--voc_size", vocabulary_size);
 
-    if(pcl::console::find_switch(argc, argv, "-partial_views"))
+    if (pcl::console::find_switch(argc, argv, "-partial_views"))
         use_partial_views = true;
 
-    if(pcl::console::find_switch(argc, argv, "-scale"))
+    if (pcl::console::find_switch(argc, argv, "-scale"))
         perform_scaling = true;
 
-    if(pcl::console::find_switch(argc, argv, "-voxelize"))
+    if (pcl::console::find_switch(argc, argv, "-voxelize"))
         perform_voxelizing = true;
 
-    if(pcl::console::find_switch(argc, argv, "-save_descr"))
+    if (pcl::console::find_switch(argc, argv, "-save_descr"))
         save_descriptors = true;
 
     pcl::console::parse_argument(argc, argv, "--vox_grid_size", voxel_grid_size);
@@ -528,14 +519,14 @@ void parseCommandLine(int argc, char** argv)
 
     pcl::console::parse_argument(argc, argv, "--centers_init", kmeans_centers_init_flag);
 
-    if(pcl::console::find_switch(argc, argv, "-h"))
+    if (pcl::console::find_switch(argc, argv, "-h"))
     {
         showHelp(argv[0]);
         exit(0);
     }
 }
 
-int main(int argc, char** argv)
+int main(int argc, char **argv)
 {
     parseCommandLine(argc, argv);
 
@@ -548,45 +539,45 @@ int main(int argc, char** argv)
     // Load models from the training directory
     training_source = Source::Ptr(new Source());
 
-    if(keypoint_detector == "us")
+    if (keypoint_detector == "us")
     {
-        detector = KeypointDetector::Ptr( new UniformKeypointDetector() );
+        detector = KeypointDetector::Ptr(new UniformKeypointDetector());
     }
-    else if(keypoint_detector == "iss")
+    else if (keypoint_detector == "iss")
     {
-        detector = KeypointDetector::Ptr( new ISSKeypointDetector() );
+        detector = KeypointDetector::Ptr(new ISSKeypointDetector());
     }
-    else if(keypoint_detector == "sift")
+    else if (keypoint_detector == "sift")
     {
-        detector = KeypointDetector::Ptr( new SIFTKeypointDetector() );
+        detector = KeypointDetector::Ptr(new SIFTKeypointDetector());
     }
-    else if(keypoint_detector == "harris")
+    else if (keypoint_detector == "harris")
     {
-        detector = KeypointDetector::Ptr( new Harris3DKeypointDetector() );
-    }
-
-    if(feature_descriptor.compare("shot") == 0)
-    {
-        feature_estimator = FeatureEstimator<PointInT>::Ptr( new FeatureEstimatorSHOT<PointInT> );
-    }
-    else if(feature_descriptor.compare("fpfh") == 0)
-    {
-        feature_estimator = FeatureEstimator<PointInT>::Ptr( new FeatureEstimatorFPFH<PointInT> );
-    }
-    else if(feature_descriptor.compare("pfhrgb") == 0)
-    {
-        feature_estimator = FeatureEstimator<PointInT>::Ptr( new FeatureEstimatorPFHRGB<PointInT> );
-    }
-    else if(feature_descriptor.compare("cshot") == 0)
-    {
-        feature_estimator = FeatureEstimator<PointInT>::Ptr( new FeatureEstimatorColorSHOT<PointInT> );
+        detector = KeypointDetector::Ptr(new Harris3DKeypointDetector());
     }
 
-    if(training_dir.find("willow") != string::npos)
+    if (feature_descriptor.compare("shot") == 0)
+    {
+        feature_estimator = FeatureEstimator<PointType>::Ptr(new FeatureEstimatorSHOT<PointType>);
+    }
+    else if (feature_descriptor.compare("fpfh") == 0)
+    {
+        feature_estimator = FeatureEstimator<PointType>::Ptr(new FeatureEstimatorFPFH<PointType>);
+    }
+    else if (feature_descriptor.compare("pfhrgb") == 0)
+    {
+        feature_estimator = FeatureEstimator<PointType>::Ptr(new FeatureEstimatorPFHRGB<PointType>);
+    }
+    else if (feature_descriptor.compare("cshot") == 0)
+    {
+        feature_estimator = FeatureEstimator<PointType>::Ptr(new FeatureEstimatorColorSHOT<PointType>);
+    }
+
+    if (training_dir.find("willow") != string::npos)
     {
         training_dataset = "willow";
     }
-    else if(training_dir.find("tuw") != string::npos)
+    else if (training_dir.find("tuw") != string::npos)
     {
         training_dataset = "tuw";
     }
@@ -597,7 +588,7 @@ int main(int argc, char** argv)
 
     PCL_INFO("training dataset: %s\n", training_dataset.c_str());
 
-    if(training_dataset.compare("ram") == 0)
+    if (training_dataset.compare("ram") == 0)
         perform_scaling = true;
 
     training_source->setPath(training_dir);

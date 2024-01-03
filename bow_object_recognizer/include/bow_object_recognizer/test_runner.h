@@ -5,22 +5,13 @@
 #include <vector>
 #include <iostream>
 #include <fstream>
-
-typedef pcl::PointXYZRGB PointInT;
-typedef pcl::PointCloud<PointInT>::Ptr PointInTPtr;
-typedef pcl::Normal NormalT;
-typedef pcl::PointCloud<NormalT>::Ptr NormalTPtr;
-
-typedef std::vector<float> feature_point;
-typedef std::vector<float> bow_vector;
-typedef std::pair<std::string, float> bow_match;
-
+#include "typedefs.h"
 
 class TestRunner
 {
 public:
-    typedef boost::shared_ptr<TestRunner> Ptr;
-    TestRunner(const std::string& tests_base_path, std::string test_setup_name, bool single_case_mode);
+    using Ptr = boost::shared_ptr<TestRunner>;
+    TestRunner(const std::string &tests_base_path, std::string test_setup_name, bool single_case_mode);
 
     // Iterate through all the combinations of the values of the test parameters
     void initTests();

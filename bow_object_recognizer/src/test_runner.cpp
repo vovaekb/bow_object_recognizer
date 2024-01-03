@@ -19,11 +19,9 @@
 #include <bow_object_recognizer/persistence_utils.h>
 #include <bow_object_recognizer/sac_alignment.h>
 
-
 string scene_keypoints_file;
 
-TestRunner::TestRunner(const std::string &tests_base_path, std::string test_setup_name, bool single_case_mode):
-    tests_base_path_(tests_base_path), test_setup_name_(test_setup_name), single_case_mode_(single_case_mode)
+TestRunner::TestRunner(const std::string &tests_base_path, std::string test_setup_name, bool single_case_mode) : tests_base_path_(tests_base_path), test_setup_name_(test_setup_name), single_case_mode_(single_case_mode)
 {
     start_thresh_ = 0.000000064;
     // 0.005 - max threshold value for the case of global estimation of precision due to the fact that higher threshold values give no positives thus are not useful
@@ -34,31 +32,33 @@ TestRunner::TestRunner(const std::string &tests_base_path, std::string test_setu
     std::cout << "tests_base_path: " << tests_base_path_ << "\n";
 }
 
-void TestRunner::initTests() {
+void TestRunner::initTests()
+{
     std::cout << "[TestRunner::initTests]\n";
 
-    if(!boost::filesystem::exists(tests_base_path_))
+    if (!boost::filesystem::exists(tests_base_path_))
         boost::filesystem::create_directories(tests_base_path_);
 
-    if(single_case_mode_)
+    if (single_case_mode_)
     {
         // Set fixed params
         runTestCase(0);
     }
 }
 
-void TestRunner::runTestCase(const int test_num) {
+void TestRunner::runTestCase(const int test_num)
+{
     std::stringstream test_path_ss;
     test_path_ss << tests_base_path_;
 
-    if(test_num)
+    if (test_num)
     {
         test_path_ss << "/test_" << test_num;
     }
 
     test_case_dir_ = test_path_ss.str();
 
-    if(!boost::filesystem::exists(test_case_dir_))
+    if (!boost::filesystem::exists(test_case_dir_))
         boost::filesystem::create_directory(test_case_dir_);
 
     std::cout << "test case dir: " << test_case_dir_ << "\n";
@@ -79,7 +79,6 @@ void TestRunner::runTestCase(const int test_num) {
 
     time_result_file_ = test_path_ss.str();
 
-
     // Write test case params setup to file
     output_.open(setup_file.c_str());
     output_ << "Experiment: " << test_setup_name_ << "\n\n";
@@ -93,7 +92,7 @@ void TestRunner::runTestCase(const int test_num) {
     setScoreThreshold(0);
 
     // Another cases
-    for(float th = start_thresh_; th <= end_thresh_+0.001; th *= 5)
+    for (float th = start_thresh_; th <= end_thresh_ + 0.001; th *= 5)
     {
         setScoreThreshold(th);
     }
@@ -121,22 +120,23 @@ void TestRunner::setScoreThreshold(const float score)
     std::cout << "\n";
 }
 
-void TestRunner::iterateTestScenes() {
+void TestRunner::iterateTestScenes()
+{
     PCL_INFO("Iterate test scenes ...\n");
 
     boost::filesystem::path test_scenes_path = test_scenes_dir;
     boost::filesystem::directory_iterator end_itr;
 
-    for(boost::filesystem::directory_iterator iter (test_scenes_path); iter != end_itr; ++iter)
+    for (boost::filesystem::directory_iterator iter(test_scenes_path); iter != end_itr; ++iter)
     {
-        if(boost::filesystem::extension(iter->path()) == ".pcd")
+        if (boost::filesystem::extension(iter->path()) == ".pcd")
         {
             test_scene = (iter->path()).string();
 
             pcl::console::print_debug("Load the test scene: %s\n", test_scene.c_str());
 
             std::size_t pos = test_scene.find_last_of("/") + 1;
-            scene_name = test_scene.substr( pos );
+            scene_name = test_scene.substr(pos);
 
             scene_name = scene_name.substr(0, scene_name.find(".pcd"));
 
@@ -146,17 +146,17 @@ void TestRunner::iterateTestScenes() {
             string gt_file = scene_name + ".txt";
 
             std::stringstream path_ss;
-            if(training_dataset.compare("ram") == 0)
+            if (training_dataset.compare("ram") == 0)
             {
                 path_ss << gt_files_dir << "/" << gt_file;
                 gt_file_path = path_ss.str();
             }
-            else if(training_dataset.compare("willow") == 0)
+            else if (training_dataset.compare("willow") == 0)
             {
                 gt_files_dir = "willow_gt_files";
                 gt_file_path = gt_files_dir;
             }
-            else if(training_dataset.compare("tuw") == 0)
+            else if (training_dataset.compare("tuw") == 0)
             {
                 gt_files_dir = "tuw_gt_files";
                 gt_file_path = gt_files_dir;
@@ -164,7 +164,7 @@ void TestRunner::iterateTestScenes() {
 
             std::cout << "groundtruth path: " << gt_file_path << "\n";
 
-            if(!boost::filesystem::exists(gt_file_path))
+            if (!boost::filesystem::exists(gt_file_path))
             {
                 PCL_ERROR("Ground truth path %s doesn't exist\n", gt_file_path.c_str());
             }
@@ -175,7 +175,7 @@ void TestRunner::iterateTestScenes() {
 
             string descr_path = path_ss.str();
 
-            if(!boost::filesystem::exists(descr_path))
+            if (!boost::filesystem::exists(descr_path))
             {
                 boost::filesystem::create_directory(descr_path);
             }
@@ -195,7 +195,7 @@ void TestRunner::iterateTestScenes() {
 #ifdef CALC_RUNTIME
     // Calculate avarage time over all the scenes
     double max_time = *std::max_element(calc_durations.begin(), calc_durations.end());
-    double average_time = std::accumulate(calc_durations.begin(), calc_durations.end(), 0.0)/calc_durations.size();
+    double average_time = std::accumulate(calc_durations.begin(), calc_durations.end(), 0.0) / calc_durations.size();
 
     output_.open(time_result_file_.c_str(), std::ios::app);
     output_ << "max time: " << max_time << "ms\n";
@@ -206,46 +206,46 @@ void TestRunner::iterateTestScenes() {
 #endif
 }
 
-void TestRunner::runDetector() {
+void TestRunner::runDetector()
+{
 #ifdef CALC_RUNTIME
     pcl::StopWatch sw;
 #endif
 
     std::vector<Model> training_models = training_source->getModels();
 
-    PointInTPtr scene_cloud (new pcl::PointCloud<PointInT> ());
+    PointCloudPtr scene_cloud(new PointCloud());
     pcl::io::loadPCDFile(test_scene.c_str(), *scene_cloud);
 
+    std::vector<BoWDescriptorPoint> descriptors_vect;
 
-    std::vector<feature_point> descriptors_vect;
-
-    PointInTPtr scene_keypoints (new pcl::PointCloud<PointInT> ());
+    PointCloudPtr scene_keypoints(new PointCloud());
 
     // Calculate features
-    if(!boost::filesystem::exists(scene_descr_file_path))
+    if (!boost::filesystem::exists(scene_descr_file_path))
     {
-        NormalTPtr normals (new pcl::PointCloud<NormalT> ());
+        SurfaceNormalsPtr normals(new SurfaceNormals());
 
-        NormalEstimator<PointInT>::Ptr normal_estimator (new NormalEstimator<PointInT>);
+        NormalEstimator<PointType>::Ptr normal_estimator(new NormalEstimator<PointType>);
         normal_estimator->setDoScaling(false);
         normal_estimator->setGridResolution(voxel_grid_size);
         normal_estimator->setDoVoxelizing(perform_voxelizing);
         normal_estimator->setNormalK(norm_est_k);
-        //normal_estimator->setNormalRadius(norm_rad);
+        // normal_estimator->setNormalRadius(norm_rad);
         normal_estimator->estimate(scene_cloud, scene_cloud, normals);
 
-        if(keypoint_detector.compare("us") == 0)
+        if (keypoint_detector.compare("us") == 0)
         {
             boost::shared_ptr<UniformKeypointDetector> cast_detector = boost::static_pointer_cast<UniformKeypointDetector>(detector);
             cast_detector->setRadius(0.02); // 0.01);
         }
-        else if(keypoint_detector.compare("iss") == 0)
+        else if (keypoint_detector.compare("iss") == 0)
         {
             boost::shared_ptr<ISSKeypointDetector> cast_detector = boost::static_pointer_cast<ISSKeypointDetector>(detector);
             cast_detector->setSalientRadiusFactor(iss_salient_rad_factor);
             cast_detector->setNonMaxRadiusFactor(iss_non_max_rad_factor);
         }
-        else if(keypoint_detector.compare("harris") == 0)
+        else if (keypoint_detector.compare("harris") == 0)
         {
             boost::shared_ptr<Harris3DKeypointDetector> cast_detector = boost::static_pointer_cast<Harris3DKeypointDetector>(detector);
             cast_detector->setThreshold(harris_thresh);
@@ -275,9 +275,9 @@ void TestRunner::runDetector() {
     pcl::PointIndices::Ptr nan_indices = feature_estimator->getNaNIndices();
 
     // Remove keypoints corresponding to NaN feature points
-    if(nan_indices->indices.size() > 0)
+    if (nan_indices->indices.size() > 0)
     {
-        pcl::ExtractIndices<PointInT> extract;
+        pcl::ExtractIndices<PointType> extract;
         extract.setInputCloud(scene_keypoints);
         extract.setIndices(nan_indices);
         extract.filter(*scene_keypoints);
@@ -285,25 +285,24 @@ void TestRunner::runDetector() {
 
     for (size_t i = 0; i < scene_keypoints->size(); ++i)
     {
-        if (! pcl_isfinite((*scene_keypoints)[i].x))
+        if (!pcl_isfinite((*scene_keypoints)[i].x))
         {
             PCL_WARN("Scene keypoint %d has NaN in x\n", static_cast<int>(i));
         }
-        else if(! pcl_isfinite((*scene_keypoints)[i].y))
+        else if (!pcl_isfinite((*scene_keypoints)[i].y))
         {
             PCL_WARN("Scene keypoint %d has NaN in y\n", static_cast<int>(i));
         }
-        else if(! pcl_isfinite((*scene_keypoints)[i].z))
+        else if (!pcl_isfinite((*scene_keypoints)[i].z))
         {
             PCL_WARN("Scene keypoint %d has NaN in z\n", static_cast<int>(i));
         }
     }
 
-
     //
     // Calculate the BoW descriptor for the scene
     //
-    bow_vector query_bow_descriptor;
+    BoWDescriptor query_bow_descriptor;
 
     bow_extractor->compute(descriptors_vect, query_bow_descriptor);
 
@@ -313,15 +312,14 @@ void TestRunner::runDetector() {
     std::vector<float> word_occurrences;
     word_occurrences.resize(vocabulary_size, 0);
 
-    std::map<string, bow_vector >::iterator map_it;
+    std::map<string, BoWDescriptor>::iterator map_it;
 
-
-    for(size_t idx = 0; idx < vocabulary_size; idx++)
+    for (size_t idx = 0; idx < vocabulary_size; idx++)
     {
-        for(map_it = training_bow_descriptors.begin(); map_it != training_bow_descriptors.end(); map_it++)
+        for (map_it = training_bow_descriptors.begin(); map_it != training_bow_descriptors.end(); map_it++)
         {
             std::vector<float> descr = (*map_it).second;
-            if(descr[idx] > 0)
+            if (descr[idx] > 0)
                 word_occurrences[idx] = word_occurrences[idx] + 1.f;
         }
     }
@@ -329,7 +327,7 @@ void TestRunner::runDetector() {
     int training_model_samples_number = training_source->getModelSamplesNumber();
 
     // Calculate idf-index
-    for(size_t idx = 0; idx < query_bow_descriptor.size(); idx++)
+    for (size_t idx = 0; idx < query_bow_descriptor.size(); idx++)
     {
         float word_occurrences_n = word_occurrences[idx];
 
@@ -355,25 +353,25 @@ void TestRunner::runDetector() {
     // Match scene against training models and rank matches
     //
 
-    std::vector<float> model_match_scores ( training_models.size() );
+    std::vector<float> model_match_scores(training_models.size());
 
-    if(use_partial_views)
+    if (use_partial_views)
     {
-        for(auto & training_model : training_models)
+        for (auto &training_model : training_models)
         {
-            std::vector<float> view_match_scores (training_model.views.size());
+            std::vector<float> view_match_scores(training_model.views.size());
 
             std::cout << "Loading views for model " << training_model.model_id << "\n";
 
-            for(auto & view_id : training_model.views)
+            for (auto &view_id : training_model.views)
             {
                 std::stringstream bow_view_sample_key;
                 bow_view_sample_key << training_model.model_id << "_" << view_id;
 
-                bow_vector view_bow_descriptor = training_bow_descriptors[bow_view_sample_key.str()];
+                BoWDescriptor view_bow_descriptor = training_bow_descriptors[bow_view_sample_key.str()];
 
                 float bow_dist = 0;
-                for(size_t idx = 0; idx < view_bow_descriptor.size(); idx++)
+                for (size_t idx = 0; idx < view_bow_descriptor.size(); idx++)
                 {
                     bow_dist = bow_dist + view_bow_descriptor[idx] * query_bow_descriptor[idx];
                 }
@@ -392,36 +390,34 @@ void TestRunner::runDetector() {
     }
     else
     {
-        for(auto & training_model : training_models)
+        for (auto &training_model : training_models)
         {
             std::string model_id = training_model.model_id;
-            bow_vector model_bow_descriptor = training_bow_descriptors[model_id];
+            BoWDescriptor model_bow_descriptor = training_bow_descriptors[model_id];
 
             float bow_dist = 0;
-            for(size_t idx = 0; idx < model_bow_descriptor.size(); idx++)
+            for (size_t idx = 0; idx < model_bow_descriptor.size(); idx++)
             {
                 bow_dist = bow_dist + model_bow_descriptor[idx] * query_bow_descriptor[idx];
             }
 
             model_match_scores[i] = bow_dist;
         }
-
     }
 
-
-    std::vector<model_score> best_matches;
+    std::vector<ModelScore> best_matches;
     sortModelScores sort_model_scores_op;
     sortModelSACAlignmentScores sort_model_sac_align_scores_op;
 
     size_t j = 0;
-    std::for_each(model_match_scores.begin(), model_match_scores.end(), [&j, &training_models, &best_matches](float & model_match_score) {
+    std::for_each(model_match_scores.begin(), model_match_scores.end(), [&j, &training_models, &best_matches](float &model_match_score)
+                  {
         Model model = training_models[j];
-        model_score match;
+        ModelScore match;
         match.model_id = model.model_id;
         match.score = model_match_score;
         best_matches.push_back(std::move(match));
-        j++;
-    });
+        j++; });
 
 #ifdef CALC_RUNTIME
     double recogn_time = sw.getTime();
@@ -433,23 +429,22 @@ void TestRunner::runDetector() {
     // The best matches are ones with higher score (cosine tends to 1)
     // Display results of the matching
 
-    std::sort(best_matches.begin(), best_matches.end(), 
-        [](const model_score& d1, const model_score& d2)
-        { 
-            return d1.score > d2.score 
-        });
+    std::sort(best_matches.begin(), best_matches.end(),
+              [](const ModelScore &d1, const ModelScore &d2)
+              {
+                  return d1.score > d2.score
+              });
 
-    if(limit_matches)
+    if (limit_matches)
     {
-        if(apply_verification)
+        if (apply_verification)
         {
             std::cout << "---------------------------------------\n";
             std::cout << "------ Geometric verification ---------\n";
             std::cout << "---------------------------------------\n";
             std::cout << "---------------------------------------\n";
 
-
-            if(best_matches.size() > 10)
+            if (best_matches.size() > 10)
                 best_matches.resize(10); // best models number
 
             //
@@ -458,25 +453,25 @@ void TestRunner::runDetector() {
 
             std::stringstream path_ss;
 
-            if(feature_descriptor.compare("fpfh") == 0)
+            if (feature_descriptor.compare("fpfh") == 0)
             {
                 // Initialize feature type
-                typedef pcl::FPFHSignature33 FeatureInT;
+                using DescriptorType = pcl::FPFHSignature33;
 
                 std::cout << "------------------- Set scene scloud to FeatureCloud ------------------\n";
 
                 // Initialize FeatureCloud object
-                FeatureCloud<FeatureInT> scene_feature_cloud;
+                FeatureCloud<DescriptorType> scene_feature_cloud;
                 scene_feature_cloud.setInputCloud(scene_keypoints);
                 scene_feature_cloud.loadInputFeatures(scene_descr_file_path);
 
                 std::cout << "Create FeatureCloud objects for best candidates\n";
 
-                SACAlignment<FeatureInT> alignment;
+                SACAlignment<DescriptorType> alignment;
 
-                for(auto & match : best_matches)
+                for (auto &match : best_matches)
                 {
-                    FeatureCloud<FeatureInT> candidate_feature_cloud;
+                    FeatureCloud<DescriptorType> candidate_feature_cloud;
 
                     string model_id = match.model_id;
                     candidate_feature_cloud.setId(model_id);
@@ -487,14 +482,15 @@ void TestRunner::runDetector() {
                     path_ss << model_path << "/" << feature_descriptor << "_descr.pcd";
                     string descr_path = path_ss.str();
 
-                    pcl::PointCloud<FeatureInT>::Ptr candidate_features (new pcl::PointCloud<FeatureInT>);
-                    pcl::io::loadPCDFile (descr_path, *candidate_features);
+                    pcl::PointCloud<DescriptorType>::Ptr candidate_features(new pcl::PointCloud<DescriptorType>);
+                    pcl::io::loadPCDFile(descr_path, *candidate_features);
 
                     // Remove NaNs
-                    pcl::PointIndices::Ptr nan_points (new pcl::PointIndices);
-                    for(size_t j = 0; j < candidate_features->points.size(); j++)
+                    pcl::PointIndices::Ptr nan_points(new pcl::PointIndices);
+                    for (size_t j = 0; j < candidate_features->points.size(); j++)
                     {
-                        if(!pcl_isfinite(candidate_features->at(j).histogram[0])) {
+                        if (!pcl_isfinite(candidate_features->at(j).histogram[0]))
+                        {
                             PCL_WARN("Point %d is NaN\n", static_cast<int>(j));
                             nan_points->indices.push_back(j);
                         }
@@ -503,9 +499,9 @@ void TestRunner::runDetector() {
                     PCL_INFO("Processing candidate: %s\n", model_id.c_str());
 
                     // Remove NaN feature points
-                    if(nan_points->indices.size() > 0)
+                    if (nan_points->indices.size() > 0)
                     {
-                        pcl::ExtractIndices<FeatureInT> extract;
+                        pcl::ExtractIndices<DescriptorType> extract;
                         extract.setInputCloud(candidate_features);
                         extract.setIndices(nan_points);
                         extract.setNegative(true);
@@ -519,15 +515,15 @@ void TestRunner::runDetector() {
 
                     string keypoints_cloud_path = path_ss.str();
 
-                    PointInTPtr keypoints (new pcl::PointCloud<PointInT>);
+                    PointCloudPtr keypoints(new PointCloud);
                     pcl::io::loadPCDFile(keypoints_cloud_path, *keypoints);
 
                     PCL_INFO("Candidate keypoints: %d\n", static_cast<int>(keypoints->points.size()));
 
                     // Remove keypoints corresponding to NaN feature points
-                    if(nan_points->indices.size() > 0)
+                    if (nan_points->indices.size() > 0)
                     {
-                        pcl::ExtractIndices<PointInT> extract;
+                        pcl::ExtractIndices<PointType> extract;
                         extract.setInputCloud(keypoints);
                         extract.setIndices(nan_points);
                         extract.setNegative(true);
@@ -538,76 +534,75 @@ void TestRunner::runDetector() {
 
                     candidate_feature_cloud.setInputCloud(keypoints);
 
-                    alignment.addTemplateCloud( candidate_feature_cloud );
+                    alignment.addTemplateCloud(candidate_feature_cloud);
                 }
 
                 alignment.setTargetCloud(scene_feature_cloud);
 
-                std::vector<SACAlignment<FeatureInT>::Result, Eigen::aligned_allocator<SACAlignment<FeatureInT>::Result> > alignment_results = alignment.alignAll();
+                std::vector<SACAlignment<DescriptorType>::Result, Eigen::aligned_allocator<SACAlignment<DescriptorType>::Result>> alignment_results = alignment.alignAll();
 
-                for(size_t i = 0; i < alignment_results.size(); i++)
+                for (size_t i = 0; i < alignment_results.size(); i++)
                 {
-                    printf ("Fitness score for model %d: %f\n", static_cast<int>(i), alignment_results[i].fitness_score);
+                    printf("Fitness score for model %d: %f\n", static_cast<int>(i), alignment_results[i].fitness_score);
                 }
 
-                for(size_t i = 0; i < best_matches.size(); i++)
+                for (size_t i = 0; i < best_matches.size(); i++)
                 {
                     best_matches[i].sac_alignment_score = alignment_results[i].fitness_score;
                 }
 
                 std::cout << "Best matches alignment scores:\n";
-                for(auto & match : best_matches)
+                for (auto &match : best_matches)
                 {
-                    printf ("sac_alignment_score for %s: %f\n", match.model_id.c_str(), match.sac_alignment_score);
+                    printf("sac_alignment_score for %s: %f\n", match.model_id.c_str(), match.sac_alignment_score);
                 }
 
-                std::sort(best_matches.begin(), best_matches.end(), 
-                    [](const model_score& d1, const model_score& d2)
-                    { 
-                        return d1.sac_alignment_score < d2.sac_alignment_score 
-                    });
+                std::sort(best_matches.begin(), best_matches.end(),
+                          [](const ModelScore &d1, const ModelScore &d2)
+                          {
+                              return d1.sac_alignment_score < d2.sac_alignment_score
+                          });
 
                 std::cout << "Best matches alignment scores after ranking:\n";
-                for(auto & match : best_matches)
+                for (auto &match : best_matches)
                 {
-                    printf ("sac_alignment_score for %s: %f\n", match.model_id.c_str(), match.sac_alignment_score);
+                    printf("sac_alignment_score for %s: %f\n", match.model_id.c_str(), match.sac_alignment_score);
                 }
             }
-            else if(feature_descriptor.compare("shot") == 0)
+            else if (feature_descriptor.compare("shot") == 0)
             {
                 // Initialize feature type
-                typedef pcl::SHOT352 FeatureInT;
+                using DescriptorType = pcl::SHOT352;
 
                 std::cout << "------------------- Set scene scloud to FeatureCloud ------------------\n";
 
                 // Initialize FeatureCloud object
-                FeatureCloud<FeatureInT> scene_feature_cloud;
-                scene_feature_cloud.setInputCloud(scene_keypoints); //scene_cloud);
+                FeatureCloud<DescriptorType> scene_feature_cloud;
+                scene_feature_cloud.setInputCloud(scene_keypoints); // scene_cloud);
                 scene_feature_cloud.loadInputFeatures(scene_descr_file_path);
 
-                pcl::PointCloud<FeatureInT>::Ptr scene_features = scene_feature_cloud.getLocalFeatures();
+                pcl::PointCloud<DescriptorType>::Ptr scene_features = scene_feature_cloud.getLocalFeatures();
 
-                for(size_t j = 0; j < scene_features->points.size(); j++)
+                for (size_t j = 0; j < scene_features->points.size(); j++)
                 {
                     int dimensionality = 352;
 
-                    for(int idx = 0; idx < dimensionality; idx++)
+                    for (int idx = 0; idx < dimensionality; idx++)
                     {
-                        if(!pcl_isfinite(scene_features->at(j).descriptor[idx]))
+                        if (!pcl_isfinite(scene_features->at(j).descriptor[idx]))
                         {
                             PCL_WARN("Feature point %d has NaN in component %d\n", static_cast<int>(j), static_cast<int>(idx));
                         }
                     }
                 }
 
-
                 std::cout << "Create FeatureCloud objects for best candidates\n";
 
-                SACAlignment<FeatureInT> alignment;
+                SACAlignment<DescriptorType> alignment;
 
-                for(auto & match : best_matches)
+                for (auto &match : best_matches)
                 {
-                    FeatureCloud<FeatureInT> candidate_feature_cloud;
+                    FeatureCloud<DescriptorType> candidate_feature_cloud;
 
                     string model_id = match.model_id;
                     candidate_feature_cloud.setId(model_id);
@@ -618,14 +613,15 @@ void TestRunner::runDetector() {
                     path_ss << model_path << "/" << feature_descriptor << "_descr.pcd";
                     string descr_path = path_ss.str();
 
-                    pcl::PointCloud<FeatureInT>::Ptr candidate_features (new pcl::PointCloud<FeatureInT>);
-                    pcl::io::loadPCDFile (descr_path, *candidate_features);
+                    pcl::PointCloud<DescriptorType>::Ptr candidate_features(new pcl::PointCloud<DescriptorType>);
+                    pcl::io::loadPCDFile(descr_path, *candidate_features);
 
                     // Remove NaNs
-                    pcl::PointIndices::Ptr nan_points (new pcl::PointIndices);
-                    for(size_t j = 0; j < candidate_features->points.size(); j++)
+                    pcl::PointIndices::Ptr nan_points(new pcl::PointIndices);
+                    for (size_t j = 0; j < candidate_features->points.size(); j++)
                     {
-                        if(!pcl_isfinite(candidate_features->at(j).descriptor[0])) {
+                        if (!pcl_isfinite(candidate_features->at(j).descriptor[0]))
+                        {
                             PCL_WARN("Point %d is NaN\n", static_cast<int>(j));
                             nan_points->indices.push_back(j);
                         }
@@ -634,9 +630,9 @@ void TestRunner::runDetector() {
                     PCL_INFO("Processing candidate: %s\n", model_id.c_str());
 
                     // Remove NaN feature points
-                    if(nan_points->indices.size() > 0)
+                    if (nan_points->indices.size() > 0)
                     {
-                        pcl::ExtractIndices<FeatureInT> extract;
+                        pcl::ExtractIndices<DescriptorType> extract;
                         extract.setInputCloud(candidate_features);
                         extract.setIndices(nan_points);
                         extract.setNegative(true);
@@ -650,15 +646,15 @@ void TestRunner::runDetector() {
 
                     string keypoints_cloud_path = path_ss.str();
 
-                    PointInTPtr keypoints (new pcl::PointCloud<PointInT>);
+                    PointCloudPtr keypoints(new PointCloud);
                     pcl::io::loadPCDFile(keypoints_cloud_path, *keypoints);
 
                     PCL_INFO("Candidate keypoints: %d\n", static_cast<int>(keypoints->points.size()));
 
                     // Remove keypoints corresponding to NaN feature points
-                    if(nan_points->indices.size() > 0)
+                    if (nan_points->indices.size() > 0)
                     {
-                        pcl::ExtractIndices<PointInT> extract;
+                        pcl::ExtractIndices<PointType> extract;
                         extract.setInputCloud(keypoints);
                         extract.setIndices(nan_points);
                         extract.setNegative(true);
@@ -667,60 +663,60 @@ void TestRunner::runDetector() {
 
                     candidate_feature_cloud.setInputCloud(keypoints);
 
-                    alignment.addTemplateCloud( candidate_feature_cloud );
+                    alignment.addTemplateCloud(candidate_feature_cloud);
                 }
 
                 alignment.setTargetCloud(scene_feature_cloud);
 
-                std::vector<SACAlignment<FeatureInT>::Result, Eigen::aligned_allocator<SACAlignment<FeatureInT>::Result> > alignment_results = alignment.alignAll();
+                std::vector<SACAlignment<DescriptorType>::Result, Eigen::aligned_allocator<SACAlignment<DescriptorType>::Result>> alignment_results = alignment.alignAll();
 
-                for(size_t i = 0; i < alignment_results.size(); i++)
+                for (size_t i = 0; i < alignment_results.size(); i++)
                 {
-                    printf ("Fitness score for model %d: %f\n", static_cast<int>(i), alignment_results[i].fitness_score);
+                    printf("Fitness score for model %d: %f\n", static_cast<int>(i), alignment_results[i].fitness_score);
                 }
 
-                for(size_t i = 0; i < best_matches.size(); i++)
+                for (size_t i = 0; i < best_matches.size(); i++)
                 {
                     best_matches[i].sac_alignment_score = alignment_results[i].fitness_score;
                 }
 
                 std::cout << "Best matches alignment scores:\n";
-                for(auto & match : best_matches)
+                for (auto &match : best_matches)
                 {
-                    printf ("sac_alignment_score for %s: %f\n", match.model_id.c_str(), match.sac_alignment_score);
+                    printf("sac_alignment_score for %s: %f\n", match.model_id.c_str(), match.sac_alignment_score);
                 }
 
-                std::sort(best_matches.begin(), best_matches.end(), 
-                    [](const model_score& d1, const model_score& d2)
-                    { 
-                        return d1.sac_alignment_score < d2.sac_alignment_score 
-                    });
+                std::sort(best_matches.begin(), best_matches.end(),
+                          [](const ModelScore &d1, const ModelScore &d2)
+                          {
+                              return d1.sac_alignment_score < d2.sac_alignment_score
+                          });
 
                 std::cout << "Best matches alignment scores after ranking:\n";
-                for(auto & match : best_matches)
+                for (auto &match : best_matches)
                 {
-                    printf ("sac_alignment_score for %s: %f\n", match.model_id.c_str(), match.sac_alignment_score);
+                    printf("sac_alignment_score for %s: %f\n", match.model_id.c_str(), match.sac_alignment_score);
                 }
             }
-            else if(feature_descriptor.compare("pfhrgb") == 0)
+            else if (feature_descriptor.compare("pfhrgb") == 0)
             {
                 // Initialize feature type
-                typedef pcl::PFHRGBSignature250 FeatureInT;
+                using DescriptorType = pcl::PFHRGBSignature250;
 
                 std::cout << "------------------- Set scene scloud to FeatureCloud ------------------\n";
 
                 // Initialize FeatureCloud object
-                FeatureCloud<FeatureInT> scene_feature_cloud;
+                FeatureCloud<DescriptorType> scene_feature_cloud;
                 scene_feature_cloud.setInputCloud(scene_keypoints);
                 scene_feature_cloud.loadInputFeatures(scene_descr_file_path);
 
                 std::cout << "Create FeatureCloud objects for best candidates\n";
 
-                SACAlignment<FeatureInT> alignment;
+                SACAlignment<DescriptorType> alignment;
 
-                for(auto & match : best_matches)
+                for (auto &match : best_matches)
                 {
-                    FeatureCloud<FeatureInT> candidate_feature_cloud;
+                    FeatureCloud<DescriptorType> candidate_feature_cloud;
 
                     string model_id = match.model_id;
                     candidate_feature_cloud.setId(model_id);
@@ -731,14 +727,15 @@ void TestRunner::runDetector() {
                     path_ss << model_path << "/" << feature_descriptor << "_descr.pcd";
                     string descr_path = path_ss.str();
 
-                    pcl::PointCloud<FeatureInT>::Ptr candidate_features (new pcl::PointCloud<FeatureInT>);
-                    pcl::io::loadPCDFile (descr_path, *candidate_features);
+                    pcl::PointCloud<DescriptorType>::Ptr candidate_features(new pcl::PointCloud<DescriptorType>);
+                    pcl::io::loadPCDFile(descr_path, *candidate_features);
 
                     // Remove NaNs
-                    pcl::PointIndices::Ptr nan_points (new pcl::PointIndices);
-                    for(size_t j = 0; j < candidate_features->points.size(); j++)
+                    pcl::PointIndices::Ptr nan_points(new pcl::PointIndices);
+                    for (size_t j = 0; j < candidate_features->points.size(); j++)
                     {
-                        if(!pcl_isfinite(candidate_features->at(j).histogram[0])) {
+                        if (!pcl_isfinite(candidate_features->at(j).histogram[0]))
+                        {
                             PCL_WARN("Point %d is NaN\n", static_cast<int>(j));
                             nan_points->indices.push_back(j);
                         }
@@ -747,9 +744,9 @@ void TestRunner::runDetector() {
                     PCL_INFO("Processing candidate: %s\n", model_id.c_str());
 
                     // Remove NaN feature points
-                    if(nan_points->indices.size() > 0)
+                    if (nan_points->indices.size() > 0)
                     {
-                        pcl::ExtractIndices<FeatureInT> extract;
+                        pcl::ExtractIndices<DescriptorType> extract;
                         extract.setInputCloud(candidate_features);
                         extract.setIndices(nan_points);
                         extract.setNegative(true);
@@ -763,15 +760,15 @@ void TestRunner::runDetector() {
 
                     string keypoints_cloud_path = path_ss.str();
 
-                    PointInTPtr keypoints (new pcl::PointCloud<PointInT>);
+                    PointCloudPtr keypoints(new PointCloud);
                     pcl::io::loadPCDFile(keypoints_cloud_path, *keypoints);
 
                     PCL_INFO("Candidate keypoints: %d\n", static_cast<int>(keypoints->points.size()));
 
                     // Remove keypoints corresponding to NaN feature points
-                    if(nan_points->indices.size() > 0)
+                    if (nan_points->indices.size() > 0)
                     {
-                        pcl::ExtractIndices<PointInT> extract;
+                        pcl::ExtractIndices<PointType> extract;
                         extract.setInputCloud(keypoints);
                         extract.setIndices(nan_points);
                         extract.setNegative(true);
@@ -780,61 +777,60 @@ void TestRunner::runDetector() {
 
                     candidate_feature_cloud.setInputCloud(keypoints);
 
-                    alignment.addTemplateCloud( candidate_feature_cloud );
+                    alignment.addTemplateCloud(candidate_feature_cloud);
                 }
 
                 alignment.setTargetCloud(scene_feature_cloud);
 
-                std::vector<SACAlignment<FeatureInT>::Result, Eigen::aligned_allocator<SACAlignment<FeatureInT>::Result> > alignment_results = alignment.alignAll();
+                std::vector<SACAlignment<DescriptorType>::Result, Eigen::aligned_allocator<SACAlignment<DescriptorType>::Result>> alignment_results = alignment.alignAll();
 
-                for(size_t i = 0; i < alignment_results.size(); i++)
+                for (size_t i = 0; i < alignment_results.size(); i++)
                 {
-                    printf ("Fitness score for model %d: %f\n", static_cast<int>(i), alignment_results[i].fitness_score);
+                    printf("Fitness score for model %d: %f\n", static_cast<int>(i), alignment_results[i].fitness_score);
                 }
 
-                for(size_t i = 0; i < best_matches.size(); i++)
+                for (size_t i = 0; i < best_matches.size(); i++)
                 {
                     best_matches[i].sac_alignment_score = alignment_results[i].fitness_score;
                 }
 
                 std::cout << "Best matches alignment scores:\n";
-                for(auto & match : best_matches)
+                for (auto &match : best_matches)
                 {
-                    printf ("sac_alignment_score for %s: %f\n", match.model_id.c_str(), match.sac_alignment_score);
+                    printf("sac_alignment_score for %s: %f\n", match.model_id.c_str(), match.sac_alignment_score);
                 }
 
-                std::sort(best_matches.begin(), best_matches.end(), 
-                    [](const model_score& d1, const model_score& d2)
-                    { 
-                        return d1.sac_alignment_score < d2.sac_alignment_score 
-                    });
+                std::sort(best_matches.begin(), best_matches.end(),
+                          [](const ModelScore &d1, const ModelScore &d2)
+                          {
+                              return d1.sac_alignment_score < d2.sac_alignment_score
+                          });
 
                 std::cout << "Best matches alignment scores after ranking:\n";
-                for(auto & match : best_matches)
+                for (auto &match : best_matches)
                 {
-                    printf ("sac_alignment_score for %s: %f\n", match.model_id.c_str(), match.sac_alignment_score);
+                    printf("sac_alignment_score for %s: %f\n", match.model_id.c_str(), match.sac_alignment_score);
                 }
             }
-            else if(feature_descriptor.compare("cshot") == 0)
+            else if (feature_descriptor.compare("cshot") == 0)
             {
                 // Initialize feature type
-                typedef pcl::SHOT1344 FeatureInT;
+                using DescriptorType = pcl::SHOT1344;
 
                 std::cout << "------------------- Set scene scloud to FeatureCloud ------------------\n";
 
                 // Initialize FeatureCloud object
-                FeatureCloud<FeatureInT> scene_feature_cloud;
+                FeatureCloud<DescriptorType> scene_feature_cloud;
                 scene_feature_cloud.setInputCloud(scene_keypoints);
                 scene_feature_cloud.loadInputFeatures(scene_descr_file_path);
 
                 std::cout << "Create FeatureCloud objects for best candidates\n";
 
+                SACAlignment<DescriptorType> alignment;
 
-                SACAlignment<FeatureInT> alignment;
-
-                for(auto & match : best_matches)
+                for (auto &match : best_matches)
                 {
-                    FeatureCloud<FeatureInT> candidate_feature_cloud;
+                    FeatureCloud<DescriptorType> candidate_feature_cloud;
 
                     string model_id = match.model_id;
                     candidate_feature_cloud.setId(model_id);
@@ -845,14 +841,15 @@ void TestRunner::runDetector() {
                     path_ss << model_path << "/" << feature_descriptor << "_descr.pcd";
                     string descr_path = path_ss.str();
 
-                    pcl::PointCloud<FeatureInT>::Ptr candidate_features (new pcl::PointCloud<FeatureInT>);
-                    pcl::io::loadPCDFile (descr_path, *candidate_features);
+                    pcl::PointCloud<DescriptorType>::Ptr candidate_features(new pcl::PointCloud<DescriptorType>);
+                    pcl::io::loadPCDFile(descr_path, *candidate_features);
 
                     // Remove NaNs
-                    pcl::PointIndices::Ptr nan_points (new pcl::PointIndices);
-                    for(size_t j = 0; j < candidate_features->points.size(); j++)
+                    pcl::PointIndices::Ptr nan_points(new pcl::PointIndices);
+                    for (size_t j = 0; j < candidate_features->points.size(); j++)
                     {
-                        if(!pcl_isfinite(candidate_features->at(j).descriptor[0])) {
+                        if (!pcl_isfinite(candidate_features->at(j).descriptor[0]))
+                        {
                             PCL_WARN("Point %d is NaN\n", static_cast<int>(j));
                             nan_points->indices.push_back(j);
                         }
@@ -861,9 +858,9 @@ void TestRunner::runDetector() {
                     PCL_INFO("Processing candidate: %s\n", model_id.c_str());
 
                     // Remove NaN feature points
-                    if(nan_points->indices.size() > 0)
+                    if (nan_points->indices.size() > 0)
                     {
-                        pcl::ExtractIndices<FeatureInT> extract;
+                        pcl::ExtractIndices<DescriptorType> extract;
                         extract.setInputCloud(candidate_features);
                         extract.setIndices(nan_points);
                         extract.setNegative(true);
@@ -877,15 +874,15 @@ void TestRunner::runDetector() {
 
                     string keypoints_cloud_path = path_ss.str();
 
-                    PointInTPtr keypoints (new pcl::PointCloud<PointInT>);
+                    PointCloudPtr keypoints(new PointCloud);
                     pcl::io::loadPCDFile(keypoints_cloud_path, *keypoints);
 
                     PCL_INFO("Candidate keypoints: %d\n", static_cast<int>(keypoints->points.size()));
 
                     // Remove keypoints corresponding to NaN feature points
-                    if(nan_points->indices.size() > 0)
+                    if (nan_points->indices.size() > 0)
                     {
-                        pcl::ExtractIndices<PointInT> extract;
+                        pcl::ExtractIndices<PointType> extract;
                         extract.setInputCloud(keypoints);
                         extract.setIndices(nan_points);
                         extract.setNegative(true);
@@ -895,42 +892,41 @@ void TestRunner::runDetector() {
                     PCL_INFO("Candidate keypoints after removal NaNs: %d\n", static_cast<int>(keypoints->points.size()));
 
                     candidate_feature_cloud.setInputCloud(keypoints);
-                    alignment.addTemplateCloud( candidate_feature_cloud );
+                    alignment.addTemplateCloud(candidate_feature_cloud);
                 }
 
                 alignment.setTargetCloud(scene_feature_cloud);
 
-                std::vector<SACAlignment<FeatureInT>::Result, Eigen::aligned_allocator<SACAlignment<FeatureInT>::Result> > alignment_results = alignment.alignAll();
+                std::vector<SACAlignment<DescriptorType>::Result, Eigen::aligned_allocator<SACAlignment<DescriptorType>::Result>> alignment_results = alignment.alignAll();
 
-                for(size_t i = 0; i < alignment_results.size(); i++)
+                for (size_t i = 0; i < alignment_results.size(); i++)
                 {
-                    printf ("Fitness score for model %d: %f\n", static_cast<int>(i), alignment_results[i].fitness_score);
+                    printf("Fitness score for model %d: %f\n", static_cast<int>(i), alignment_results[i].fitness_score);
                 }
 
-                for(size_t i = 0; i < best_matches.size(); i++)
+                for (size_t i = 0; i < best_matches.size(); i++)
                 {
                     best_matches[i].sac_alignment_score = alignment_results[i].fitness_score;
                 }
 
                 std::cout << "Best matches alignment scores:\n";
-                for(auto & match : best_matches)
+                for (auto &match : best_matches)
                 {
-                    printf ("sac_alignment_score for %s: %f\n", match.model_id.c_str(), match.sac_alignment_score);
+                    printf("sac_alignment_score for %s: %f\n", match.model_id.c_str(), match.sac_alignment_score);
                 }
 
-                std::sort(best_matches.begin(), best_matches.end(), 
-                    [](const model_score& d1, const model_score& d2)
-                    { 
-                        return d1.sac_alignment_score < d2.sac_alignment_score 
-                    });
+                std::sort(best_matches.begin(), best_matches.end(),
+                          [](const ModelScore &d1, const ModelScore &d2)
+                          {
+                              return d1.sac_alignment_score < d2.sac_alignment_score
+                          });
 
                 std::cout << "Best matches alignment scores after ranking:\n";
-                for(auto & match : best_matches)
+                for (auto &match : best_matches)
                 {
-                    printf ("sac_alignment_score for %s: %f\n", match.model_id.c_str(), match.sac_alignment_score);
+                    printf("sac_alignment_score for %s: %f\n", match.model_id.c_str(), match.sac_alignment_score);
                 }
             }
-
         }
 
         best_matches.resize(5);
@@ -938,28 +934,28 @@ void TestRunner::runDetector() {
         output_.open(test_scores_file_.c_str(), std::ios::app);
         output_ << scene_name << "\n";
 
-        for(int i = 0; i < best_matches.size(); i++)
-        for(auto & match : best_matches)
-        {
-            std::string model_id = match.model_id;
-
-            bool is_present = false;
-
-            if(training_dataset.compare("ram") == 0)
+        for (int i = 0; i < best_matches.size(); i++)
+            for (auto &match : best_matches)
             {
-                is_present = PersistenceUtils::modelPresents(gt_file_path, model_id);
+                std::string model_id = match.model_id;
+
+                bool is_present = false;
+
+                if (training_dataset.compare("ram") == 0)
+                {
+                    is_present = PersistenceUtils::modelPresents(gt_file_path, model_id);
+                }
+                else if (training_dataset.compare("willow") == 0 || training_dataset.compare("tuw") == 0)
+                {
+                    is_present = PersistenceUtils::modelPresents(gt_file_path, scene_name, model_id);
+                }
+
+                cout << model_id << ": " << is_present << "\n"; // " - " << match.score << "\n";
+
+                cout << match.score << ":" << is_present << "\n";
+
+                output_ << match.score << ":" << is_present << "\n";
             }
-            else if(training_dataset.compare("willow") == 0 || training_dataset.compare("tuw") == 0)
-            {
-                is_present = PersistenceUtils::modelPresents(gt_file_path, scene_name, model_id);
-            }
-
-            cout << model_id << ": " << is_present << "\n"; // " - " << match.score << "\n";
-
-            cout << match.score << ":" << is_present << "\n";
-
-            output_ << match.score << ":" << is_present << "\n";
-        }
 
         output_ << "\n";
         output_.close();
@@ -973,24 +969,24 @@ void TestRunner::runDetector() {
         output_.open(test_scores_file_.c_str(), std::ios::app);
         output_ << scene_name << "\n";
 
-        for(size_t i = 0; i < training_models.size(); i++)
+        for (size_t i = 0; i < training_models.size(); i++)
         {
             std::string train_model_id = training_models[i].model_id;
             bool is_present = false;
 
-            if(training_dataset.compare("ram") == 0)
+            if (training_dataset.compare("ram") == 0)
             {
                 is_present = PersistenceUtils::modelPresents(gt_file_path, train_model_id);
             }
-            else if(training_dataset.compare("willow") == 0 || training_dataset.compare("tuw") == 0)
+            else if (training_dataset.compare("willow") == 0 || training_dataset.compare("tuw") == 0)
             {
                 is_present = PersistenceUtils::modelPresents(gt_file_path, scene_name, train_model_id);
             }
 
-            model_score match;
-            for(int j = 0; j < best_matches.size(); j++)
+            ModelScore match;
+            for (int j = 0; j < best_matches.size(); j++)
             {
-                if(best_matches[j].model_id == train_model_id)
+                if (best_matches[j].model_id == train_model_id)
                 {
                     match = best_matches[j];
                     break;

@@ -10,17 +10,16 @@
 #include <pcl/filters/filter.h>
 #include <pcl/features/normal_3d_omp.h>
 #include <pcl/common/transforms.h>
+#include "typedefs.h"
 
 using namespace std;
 
-template <typename PointInT>
+template <typename PointType>
 class NormalEstimator
 {
-    typedef typename pcl::PointCloud<PointInT>::Ptr PointInTPtr;
-    typedef typename pcl::PointCloud<PointInT>::ConstPtr PointInTConstPtr;
 
 public:
-    typedef boost::shared_ptr<NormalEstimator> Ptr;
+    using Ptr = boost::shared_ptr<NormalEstimator>;
     bool do_scaling_;
     bool do_voxelizing_;
 
@@ -56,9 +55,9 @@ public:
     }
 
     void estimate(
-        PointInTPtr &in,
-        PointInTPtr &out,
-        pcl::PointCloud<pcl::Normal>::Ptr &normals) noexcept
+        PointCloudPtr &in,
+        PointCloudPtr &out,
+        SurfaceNormalsPtr &normals) noexcept
     {
         if (do_scaling_)
         {
@@ -75,11 +74,11 @@ public:
         {
             // Voxelize cloud
             float grid_size = grid_resolution_; // 0.0025 - value used in the 3d_rec_framework
-            pcl::VoxelGrid<PointInT> voxel_grid;
+            pcl::VoxelGrid<PointType> voxel_grid;
             voxel_grid.setInputCloud(in);
             voxel_grid.setLeafSize(grid_size, grid_size, grid_size);
 
-            PointInTPtr temp_cloud(new pcl::PointCloud<PointInT>());
+            PointCloudPtr temp_cloud(new PointCloud());
             voxel_grid.filter(*temp_cloud);
 
             in = temp_cloud;
@@ -93,7 +92,7 @@ public:
 
         // Calculate normals
 
-        typedef typename pcl::NormalEstimationOMP<PointInT, pcl::Normal> NormalEstimator_;
+        using NormalEstimator_ = pcl::NormalEstimationOMP<PointType, NormalType>;
         NormalEstimator_ norm_est;
         norm_est.setKSearch(norm_est_k_);
         norm_est.setInputCloud(out);
@@ -103,7 +102,7 @@ public:
 
         for (size_t i = 0; i < normals->points.size(); i++)
         {
-            if (!pcl::isFinite<pcl::Normal>(normals->points[i]))
+            if (!pcl::isFinite<NormalType>(normals->points[i]))
                 PCL_WARN("Normal %d is NaN\n", static_cast<int>(i));
         }
 
@@ -111,7 +110,7 @@ public:
         pcl::removeNaNNormalsFromPointCloud(*normals, *normals, mapping);
         if (mapping.size() > 0)
         {
-            PointInTPtr cloud_tmp(new pcl::PointCloud<PointInT>());
+            PointCloudPtr cloud_tmp(new PointCloud());
             pcl::copyPointCloud(*out, *cloud_tmp);
             pcl::copyPointCloud(*cloud_tmp, mapping, *out);
         }

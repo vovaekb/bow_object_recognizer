@@ -5,8 +5,8 @@
 #include <boost/filesystem.hpp>
 
 /**
-  * Basic class for 3D point cloud model representation
-  **/
+ * Basic class for 3D point cloud model representation
+ **/
 class Model
 {
 public:
@@ -15,16 +15,12 @@ public:
     std::vector<std::string> views;
 };
 
-
 /**
-  * Abstract data source class, manages filesystem, load models and scenes for training etc.
-  */
+ * Abstract data source class, manages filesystem, load models and scenes for training etc.
+ */
 class Source
 {
 protected:
-    typedef pcl::PointXYZRGB PointInT;
-    typedef pcl::PointCloud<PointInT>::Ptr PointInTPtr;
-
     std::string training_path_;
     std::vector<Model> models_;
     std::vector<std::string> scenes_;
@@ -34,12 +30,12 @@ protected:
     bool use_model_views_;
 
 public:
-    typedef boost::shared_ptr<Source> Ptr;
+    using Ptr = boost::shared_ptr<Source>;
 
     Source();
 
     // Pass the path to the directory to store training data
-    void setPath(std::string& path);
+    void setPath(std::string &path);
 
     void setUseModelViews(bool use_model_views);
 
@@ -67,7 +63,7 @@ public:
 /*
  * Struct for storing matching scores
  **/
-struct model_score
+struct ModelScore
 {
     std::string model_id;
     std::string view_id;
@@ -75,10 +71,9 @@ struct model_score
     float sac_alignment_score;
 };
 
-
 struct sortModelSACAlignmentScores
 {
-    bool operator() (const model_score& d1, const model_score& d2)
+    bool operator()(const ModelScore &d1, const ModelScore &d2)
     {
         return d1.sac_alignment_score < d2.sac_alignment_score;
     }

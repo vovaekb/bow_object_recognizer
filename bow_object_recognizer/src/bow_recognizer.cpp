@@ -30,18 +30,9 @@
 #include "pc_source/source.cpp"
 #include "bagofwords.cpp"
 #include "test_runner.cpp"
+#include "typedefs.h"
 
 using namespace std;
-
-typedef pcl::PointXYZRGB PointInT;
-typedef pcl::Normal NormalT;
-typedef pcl::PointCloud<PointInT>::Ptr PointInTPtr;
-typedef pcl::PointCloud<PointInT>::ConstPtr PointInTConstPtr;
-typedef pcl::PointCloud<NormalT>::Ptr NormalTPtr;
-
-typedef std::vector<float> feature_point;
-typedef std::vector<float> bow_vector;
-typedef std::pair<std::string, float> bow_match;
 
 bool use_partial_views(false);
 string training_dir;
@@ -94,9 +85,9 @@ BoWModelDescriptorExtractor::Ptr bow_extractor;
 
 Source::Ptr training_source;
 KeypointDetector::Ptr detector;
-FeatureEstimator<PointInT>::Ptr feature_estimator;
+FeatureEstimator<PointType>::Ptr feature_estimator;
 
-std::map<std::string, bow_vector> training_bow_descriptors;
+std::map<std::string, BoWDescriptor> training_bow_descriptors;
 
 bool run_tests(false);
 
@@ -137,7 +128,7 @@ void loadBoWModels()
 
                 string bow_descr_file = bow_descr_path.str();
 
-                bow_vector &view_bow_descr = training_bow_descriptors[bow_sample_id.str()];
+                BoWDescriptor &view_bow_descr = training_bow_descriptors[bow_sample_id.str()];
                 PersistenceUtils::readVectorFromFile(bow_descr_file, view_bow_descr);
             }
         }
@@ -151,17 +142,17 @@ void loadBoWModels()
 
             string bow_descr_file = bow_descr_path.str();
 
-            bow_vector &model_bow_descr = training_bow_descriptors[training_model.model_id];
+            BoWDescriptor &model_bow_descr = training_bow_descriptors[training_model.model_id];
             PersistenceUtils::readVectorFromFile(bow_descr_file, model_bow_descr);
         }
     }
 }
 
-void recognizeScene(PointInTPtr &scene_cloud)
+void recognizeScene(PointCloudPtr &scene_cloud)
 {
     std::vector<Model> training_models = training_source->getModels();
 
-    std::vector<feature_point> descriptors_vect;
+    std::vector<BoWDescriptorPoint> descriptors_vect;
 
     std::stringstream path_ss;
     path_ss << test_scenes_dir << "/" << feature_descriptor;
@@ -174,14 +165,14 @@ void recognizeScene(PointInTPtr &scene_cloud)
 
     string scene_keypoints_file = path_ss.str();
 
-    PointInTPtr scene_keypoints(new pcl::PointCloud<PointInT>());
+    PointCloudPtr scene_keypoints(new PointCloud());
 
     if (!boost::filesystem::exists(scene_descr_file_path))
     {
 
-        NormalTPtr normals(new pcl::PointCloud<NormalT>());
+        SurfaceNormalsPtr normals(new SurfaceNormals());
 
-        NormalEstimator<PointInT>::Ptr normal_estimator(new NormalEstimator<PointInT>);
+        NormalEstimator<PointType>::Ptr normal_estimator(new NormalEstimator<PointType>);
 
         normal_estimator->setDoScaling(false);
         normal_estimator->setGridResolution(voxel_grid_size);
@@ -233,7 +224,7 @@ void recognizeScene(PointInTPtr &scene_cloud)
 
     for (size_t i = 0; i < scene_keypoints->points.size(); i++)
     {
-        if (!pcl::isFinite<PointInT>(scene_keypoints->points[i]))
+        if (!pcl::isFinite<PointType>(scene_keypoints->points[i]))
             PCL_WARN("Keypoint %d is NaN\n", static_cast<int>(i));
     }
 
@@ -247,7 +238,7 @@ void recognizeScene(PointInTPtr &scene_cloud)
     std::vector<float> word_occurrences;
     word_occurrences.resize(vocabulary_size, 0);
 
-    std::map<string, bow_vector>::iterator map_it;
+    std::map<string, BoWDescriptor>::iterator map_it;
 
     for (size_t idx = 0; idx < vocabulary_size; idx++)
     {
@@ -291,7 +282,7 @@ void recognizeScene(PointInTPtr &scene_cloud)
                 std::stringstream bow_view_sample_key;
                 bow_view_sample_key << training_model.model_id << "_" << view_id;
 
-                bow_vector view_bow_descriptor = training_bow_descriptors[bow_view_sample_key.str()];
+                BoWDescriptor view_bow_descriptor = training_bow_descriptors[bow_view_sample_key.str()];
 
                 auto bow_dist = 0;
                 for (size_t idx = 0; idx < view_bow_descriptor.size(); idx++)
@@ -316,7 +307,7 @@ void recognizeScene(PointInTPtr &scene_cloud)
         for (size_t i = 0; i < training_models.size(); i++)
         {
             string model_id = training_models[i].model_id;
-            bow_vector model_bow_descriptor = training_bow_descriptors[model_id];
+            BoWDescriptor model_bow_descriptor = training_bow_descriptors[model_id];
 
             auto bow_dist = 0;
             for (size_t idx = 0; idx < model_bow_descriptor.size(); idx++)
@@ -328,14 +319,14 @@ void recognizeScene(PointInTPtr &scene_cloud)
         }
     }
 
-    vector<model_score> best_matches;
+    vector<ModelScore> best_matches;
     sortModelSACAlignmentScores sort_model_sac_align_scores_op;
 
     size_t j = 0;
     std::for_each(model_match_scores.begin(), model_match_scores.end(), [&j, &training_models, &best_matches](float &model_match_score)
                   {
         Model model = training_models[j];
-        model_score match;
+        ModelScore match;
         match.model_id = model.model_id;
         match.score = model_match_score;
         best_matches.push_back(std::move(match));
@@ -349,7 +340,7 @@ void recognizeScene(PointInTPtr &scene_cloud)
     {
         // rank matches
         std::sort(best_matches.begin(), best_matches.end(),
-                  [](const model_score &d1, const model_score &d2)
+                  [](const ModelScore &d1, const ModelScore &d2)
                   {
                       return d1.score > d2.score
                   });
@@ -373,24 +364,24 @@ void recognizeScene(PointInTPtr &scene_cloud)
             if (feature_descriptor.compare("fpfh") == 0)
             {
                 // Initialize feature type
-                typedef pcl::FPFHSignature33 FeatureInT;
+                using DescriptorType = pcl::FPFHSignature33;
 
                 std::cout << "------------------- Set scene scloud to FeatureCloud ------------------\n";
 
                 // Initialize FeatureCloud object
-                FeatureCloud<FeatureInT> scene_feature_cloud;
+                FeatureCloud<DescriptorType> scene_feature_cloud;
                 scene_feature_cloud.setInputCloud(scene_keypoints);
                 scene_feature_cloud.loadInputFeatures(scene_descr_file_path);
 
                 std::cout << "Create FeatureCloud objects for best candidates\n";
 
-                std::vector<FeatureCloud<FeatureInT>> candidate_feature_clouds;
+                std::vector<FeatureCloud<DescriptorType>> candidate_feature_clouds;
 
-                SACAlignment<FeatureInT> alignment;
+                SACAlignment<DescriptorType> alignment;
 
                 for (auto &match : best_matches)
                 {
-                    FeatureCloud<FeatureInT> candidate_feature_cloud;
+                    FeatureCloud<DescriptorType> candidate_feature_cloud;
 
                     string model_id = match.model_id;
                     candidate_feature_cloud.setId(model_id);
@@ -416,7 +407,7 @@ void recognizeScene(PointInTPtr &scene_cloud)
 
                 alignment.setTargetCloud(scene_feature_cloud);
 
-                std::vector<SACAlignment<FeatureInT>::Result, Eigen::aligned_allocator<SACAlignment<FeatureInT>::Result>> alignment_results = alignment.alignAll();
+                std::vector<SACAlignment<DescriptorType>::Result, Eigen::aligned_allocator<SACAlignment<DescriptorType>::Result>> alignment_results = alignment.alignAll();
 
                 for (size_t i = 0; i < alignment_results.size(); i++)
                 {
@@ -435,7 +426,7 @@ void recognizeScene(PointInTPtr &scene_cloud)
                 }
 
                 std::sort(best_matches.begin(), best_matches.end(),
-                          [](const model_score &d1, const model_score &d2)
+                          [](const ModelScore &d1, const ModelScore &d2)
                           {
                               return d1.sac_alignment_score < d2.sac_alignment_score
                           });
@@ -449,24 +440,24 @@ void recognizeScene(PointInTPtr &scene_cloud)
             else if (feature_descriptor.compare("shot") == 0)
             {
                 // Initialize feature type
-                typedef pcl::SHOT352 FeatureInT;
+                using DescriptorType = pcl::SHOT352;
 
                 std::cout << "------------------- Set scene scloud to FeatureCloud ------------------\n";
 
                 // Initialize FeatureCloud object
-                FeatureCloud<FeatureInT> scene_feature_cloud;
+                FeatureCloud<DescriptorType> scene_feature_cloud;
                 scene_feature_cloud.setInputCloud(scene_keypoints);
                 scene_feature_cloud.loadInputFeatures(scene_descr_file_path);
 
                 std::cout << "Create FeatureCloud objects for best candidates\n";
 
-                std::vector<FeatureCloud<FeatureInT>> candidate_feature_clouds;
+                std::vector<FeatureCloud<DescriptorType>> candidate_feature_clouds;
 
-                SACAlignment<FeatureInT> alignment;
+                SACAlignment<DescriptorType> alignment;
 
                 for (auto &match : best_matches)
                 {
-                    FeatureCloud<FeatureInT> candidate_feature_cloud;
+                    FeatureCloud<DescriptorType> candidate_feature_cloud;
 
                     string model_id = match.model_id;
                     candidate_feature_cloud.setId(model_id);
@@ -492,7 +483,7 @@ void recognizeScene(PointInTPtr &scene_cloud)
 
                 alignment.setTargetCloud(scene_feature_cloud);
 
-                std::vector<SACAlignment<FeatureInT>::Result, Eigen::aligned_allocator<SACAlignment<FeatureInT>::Result>> alignment_results = alignment.alignAll();
+                std::vector<SACAlignment<DescriptorType>::Result, Eigen::aligned_allocator<SACAlignment<DescriptorType>::Result>> alignment_results = alignment.alignAll();
 
                 for (size_t i = 0; i < alignment_results.size(); i++)
                 {
@@ -511,7 +502,7 @@ void recognizeScene(PointInTPtr &scene_cloud)
                 }
 
                 std::sort(best_matches.begin(), best_matches.end(),
-                          [](const model_score &d1, const model_score &d2)
+                          [](const ModelScore &d1, const ModelScore &d2)
                           {
                               return d1.sac_alignment_score < d2.sac_alignment_score
                           });
@@ -525,24 +516,24 @@ void recognizeScene(PointInTPtr &scene_cloud)
             else if (feature_descriptor.compare("pfhrgb") == 0)
             {
                 // Initialize feature type
-                typedef pcl::PFHRGBSignature250 FeatureInT;
+                using DescriptorType = pcl::PFHRGBSignature250;
 
                 std::cout << "------------------- Set scene scloud to FeatureCloud ------------------\n";
 
                 // Initialize FeatureCloud object
-                FeatureCloud<FeatureInT> scene_feature_cloud;
+                FeatureCloud<DescriptorType> scene_feature_cloud;
                 scene_feature_cloud.setInputCloud(scene_keypoints);
                 scene_feature_cloud.loadInputFeatures(scene_descr_file_path);
 
                 std::cout << "Create FeatureCloud objects for best candidates\n";
 
-                std::vector<FeatureCloud<FeatureInT>> candidate_feature_clouds;
+                std::vector<FeatureCloud<DescriptorType>> candidate_feature_clouds;
 
-                SACAlignment<FeatureInT> alignment;
+                SACAlignment<DescriptorType> alignment;
 
                 for (auto &match : best_matches)
                 {
-                    FeatureCloud<FeatureInT> candidate_feature_cloud;
+                    FeatureCloud<DescriptorType> candidate_feature_cloud;
 
                     string model_id = match.model_id;
                     candidate_feature_cloud.setId(model_id);
@@ -568,7 +559,7 @@ void recognizeScene(PointInTPtr &scene_cloud)
 
                 alignment.setTargetCloud(scene_feature_cloud);
 
-                std::vector<SACAlignment<FeatureInT>::Result, Eigen::aligned_allocator<SACAlignment<FeatureInT>::Result>> alignment_results = alignment.alignAll();
+                std::vector<SACAlignment<DescriptorType>::Result, Eigen::aligned_allocator<SACAlignment<DescriptorType>::Result>> alignment_results = alignment.alignAll();
 
                 for (size_t i = 0; i < alignment_results.size(); i++)
                 {
@@ -587,7 +578,7 @@ void recognizeScene(PointInTPtr &scene_cloud)
                 }
 
                 std::sort(best_matches.begin(), best_matches.end(),
-                          [](const model_score &d1, const model_score &d2)
+                          [](const ModelScore &d1, const ModelScore &d2)
                           {
                               return d1.sac_alignment_score < d2.sac_alignment_score
                           });
@@ -601,24 +592,24 @@ void recognizeScene(PointInTPtr &scene_cloud)
             else if (feature_descriptor.compare("cshot") == 0)
             {
                 // Initialize feature type
-                typedef pcl::SHOT1344 FeatureInT;
+                using DescriptorType = pcl::SHOT1344;
 
                 std::cout << "------------------- Set scene scloud to FeatureCloud ------------------\n";
 
                 // Initialize FeatureCloud object
-                FeatureCloud<FeatureInT> scene_feature_cloud;
+                FeatureCloud<DescriptorType> scene_feature_cloud;
                 scene_feature_cloud.setInputCloud(scene_keypoints);
                 scene_feature_cloud.loadInputFeatures(scene_descr_file_path);
 
                 std::cout << "Create FeatureCloud objects for best candidates\n";
 
-                std::vector<FeatureCloud<FeatureInT>> candidate_feature_clouds;
+                std::vector<FeatureCloud<DescriptorType>> candidate_feature_clouds;
 
-                SACAlignment<FeatureInT> alignment;
+                SACAlignment<DescriptorType> alignment;
 
                 for (auto &match : best_matches)
                 {
-                    FeatureCloud<FeatureInT> candidate_feature_cloud;
+                    FeatureCloud<DescriptorType> candidate_feature_cloud;
 
                     string model_id = match.model_id;
                     candidate_feature_cloud.setId(model_id);
@@ -644,7 +635,7 @@ void recognizeScene(PointInTPtr &scene_cloud)
 
                 alignment.setTargetCloud(scene_feature_cloud);
 
-                std::vector<SACAlignment<FeatureInT>::Result, Eigen::aligned_allocator<SACAlignment<FeatureInT>::Result>> alignment_results = alignment.alignAll();
+                std::vector<SACAlignment<DescriptorType>::Result, Eigen::aligned_allocator<SACAlignment<DescriptorType>::Result>> alignment_results = alignment.alignAll();
 
                 for (size_t i = 0; i < alignment_results.size(); i++)
                 {
@@ -663,7 +654,7 @@ void recognizeScene(PointInTPtr &scene_cloud)
                 }
 
                 std::sort(best_matches.begin(), best_matches.end(),
-                          [](const model_score &d1, const model_score &d2)
+                          [](const ModelScore &d1, const ModelScore &d2)
                           {
                               return d1.sac_alignment_score < d2.sac_alignment_score
                           });
@@ -915,19 +906,19 @@ int main(int argc, char **argv)
 
     if (feature_descriptor.compare("shot") == 0)
     {
-        feature_estimator = FeatureEstimator<PointInT>::Ptr(new FeatureEstimatorSHOT<PointInT>);
+        feature_estimator = FeatureEstimator<PointType>::Ptr(new FeatureEstimatorSHOT<PointType>);
     }
     else if (feature_descriptor.compare("fpfh") == 0)
     {
-        feature_estimator = FeatureEstimator<PointInT>::Ptr(new FeatureEstimatorFPFH<PointInT>);
+        feature_estimator = FeatureEstimator<PointType>::Ptr(new FeatureEstimatorFPFH<PointType>);
     }
     else if (feature_descriptor.compare("pfhrgb") == 0)
     {
-        feature_estimator = FeatureEstimator<PointInT>::Ptr(new FeatureEstimatorPFHRGB<PointInT>);
+        feature_estimator = FeatureEstimator<PointType>::Ptr(new FeatureEstimatorPFHRGB<PointType>);
     }
     else if (feature_descriptor.compare("cshot") == 0)
     {
-        feature_estimator = FeatureEstimator<PointInT>::Ptr(new FeatureEstimatorColorSHOT<PointInT>);
+        feature_estimator = FeatureEstimator<PointType>::Ptr(new FeatureEstimatorColorSHOT<PointType>);
     }
 
     if (training_dir.find("willow") != string::npos)
@@ -1019,7 +1010,7 @@ int main(int argc, char **argv)
     else
     {
         // Load test scene
-        PointInTPtr scene_cloud(new pcl::PointCloud<PointInT>());
+        PointCloudPtr scene_cloud(new PointCloud());
         pcl::io::loadPCDFile(test_scene.c_str(), *scene_cloud);
 
         printf("scene cloud has size: %d\n", static_cast<int>(scene_cloud->points.size()));
