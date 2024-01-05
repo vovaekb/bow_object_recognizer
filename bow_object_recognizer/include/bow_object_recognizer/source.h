@@ -13,6 +13,17 @@ public:
     std::string model_id;
     std::string cloud_path;
     std::vector<std::string> views;
+    Model(Model&& m)
+    {
+        model_id = m.model_id;
+        cloud_path = m.cloud_path;
+        views.resize(m.views.size());
+        copy(m.views.begin(), m.views.end(), back_inserter(views));
+        
+        m.model_id = "";
+        m.cloud_path = "";
+        m.views.clear();
+    }
 };
 
 /**
