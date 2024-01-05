@@ -25,6 +25,16 @@ struct DMatch
     int query_idx;
     int train_idx;
     float distance;
+    DMatch(DMatch&& d)
+    {
+        query_idx = d.query_idx;
+        train_idx = d.train_idx;
+        distance = d.distance;
+
+        d.query_idx = 0;
+        d.train_idx = 0;
+        d.score = 0;
+    }
 };
 
 /*
