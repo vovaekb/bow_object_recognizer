@@ -76,6 +76,18 @@ public:
  **/
 struct ModelScore
 {
+    ModelScore(ModelScore&& m)
+    {
+        model_id = m.model_id;
+        view_id = m.view_id;
+        score = m.score;
+        sac_alignment_score = m.sac_alignment_score;
+        
+        m.model_id = "";
+        m.view_id = "";
+        score = 0;
+        sac_alignment_score = 0;
+    }
     std::string model_id;
     std::string view_id;
     float score;
