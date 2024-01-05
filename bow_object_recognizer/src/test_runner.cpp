@@ -988,7 +988,7 @@ void TestRunner::runDetector()
             {
                 if (best_matches[j].model_id == train_model_id)
                 {
-                    match = best_matches[j];
+                    match = std::move(best_matches[j]);
                     break;
                 }
             }
